@@ -1341,88 +1341,150 @@
   cursor: pointer;
 }
 
-.yt-start-btn {
-  min-width: 210px;
-  padding: 0 20px;
+.yt-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
 }
 
-.yt-start-btn:disabled {
+.yt-enqueue-btn {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+}
+
+.yt-quick-btn {
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.yt-enqueue-btn:disabled,
+.yt-quick-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-.yt-dl-progress-box {
+.yt-queue-section {
   margin-top: 12px;
-  padding: 11px 12px;
-  border-radius: 12px;
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.32);
-}
-
-.yt-dl-progress-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: #e0f5ff;
-  margin-bottom: 7px;
-}
-
-.yt-dl-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.yt-history-section {
-  margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--border-hairline);
 }
 
-.yt-history-head {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.yt-history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.yt-history-item {
+.yt-queue-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
 }
 
-.yt-history-meta {
+.yt-queue-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.yt-queue-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.yt-queue-empty {
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.yt-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.yt-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.yt-queue-item.is-active {
+  background: rgba(56, 189, 248, 0.09);
+  border-color: rgba(56, 189, 248, 0.42);
+}
+
+.yt-queue-item.is-done {
+  background: rgba(52, 211, 153, 0.06);
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.yt-queue-item.is-error {
+  background: rgba(251, 113, 133, 0.07);
+  border-color: rgba(251, 113, 133, 0.3);
+}
+
+.yt-queue-thumb {
+  width: 56px;
+  height: 32px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #0b0f19;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.yt-queue-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.yt-queue-info {
   min-width: 0;
   flex: 1;
   display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.yt-history-copy {
-  min-width: 0;
-  display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
 }
 
-.yt-history-copy strong {
+.yt-queue-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.yt-queue-num {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.yt-queue-title {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
@@ -1431,15 +1493,42 @@
   text-overflow: ellipsis;
 }
 
-.yt-history-copy small {
+.yt-queue-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 10.5px;
   color: var(--text-secondary);
 }
 
-.yt-history-actions {
+.yt-queue-status {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.yt-queue-stats {
+  flex-shrink: 0;
+  color: var(--accent-cyan);
+}
+
+.yt-queue-bar {
+  height: 4px;
+  margin-top: 2px;
+}
+
+.yt-queue-actions {
   display: flex;
+  align-items: center;
   gap: 5px;
   flex-shrink: 0;
+}
+
+.yt-remove-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
 }
 
 @media (max-width: 600px) {

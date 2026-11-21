@@ -112,7 +112,7 @@ $latestObj = @{
     size = $size
     sha256 = $hash
     downloadUrl = $DownloadUrl
-    notes = "AETHER Player v$appVersion - Built-in YouTube MP4 (Resolution Picker) & MP3 Studio Downloader, Aspect-Locked PIP, Ghost Mode"
+    notes = "AETHER Player v$appVersion - Multi-Item YouTube MP4/MP3 Download Queue, Resolution Picker, Auto-Play Batch, Aspect-Locked PIP, Ghost Mode"
     releasedAt = (Get-Date).ToString("o")
 }
 $latestObj | ConvertTo-Json -Depth 3 | Set-Content -Path (Join-Path $distDir "latest.json") -Encoding UTF8

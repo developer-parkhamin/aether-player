@@ -2,7 +2,7 @@ namespace AetherPlayer
 {
     internal static class AppConfig
     {
-        public const string Version = "2.4.0";
+        public const string Version = "2.5.0";
 
         // Built-in auto-update source configured in code before release build:
         // - UpdateSourceType: "github" (GitHub Releases) or "feed" (direct latest.json URL)

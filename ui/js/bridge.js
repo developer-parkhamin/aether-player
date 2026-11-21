@@ -116,6 +116,6 @@
     ytUpdateEngine: function () { return send('yt:updateEngine'); },
     ytFetchInfo: function (url) { return send('yt:fetchInfo', { url: String(url || '') }); },
     ytDownload: function (opts) { return send('yt:download', opts || {}); },
-    ytCancel: function () { return send('yt:cancel'); }
+    ytCancel: function (opts) { return send('yt:cancel', opts || {}); }
   };
 })(window);

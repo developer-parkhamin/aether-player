@@ -45,7 +45,7 @@
     <!-- Custom Frameless Desktop Titlebar -->
     <header id="top-header" class="desktop-titlebar glass-bar">
       <div id="titlebar-drag-zone" class="titlebar-drag-zone">
-        <div id="brand-logo" title="AETHER Studio v2.4 (로고 5회 클릭: 이스터에그)">
+        <div id="brand-logo" title="AETHER Studio v2.5 (로고 5회 클릭: 이스터에그)">
           <span class="brand-mark" aria-hidden="true">
             <img src="./assets/logo.png" class="brand-logo-img" alt="AETHER" />
           </span>
@@ -302,11 +302,11 @@
                   <div class="welcome-title-wrap">
                     <div class="welcome-eyebrow">
                       <span class="pulse-dot"></span>
-                      <span>AETHER MEDIA STUDIO v2.4.0 PRO</span>
+                      <span>AETHER MEDIA STUDIO v2.5.0 PRO</span>
                     </div>
                     <h1 class="welcome-title">AETHER 데스크톱 시네마 &amp; 오디오 스튜디오</h1>
                     <p class="welcome-desc">
-                      유튜브 MP4/MP3 원클릭 다운로드, 비율 자동 고정 PIP, 고스트 클릭 통과(<code>Alt+Shift+G</code>), <code>.part</code> 실시간 재생
+                      유튜브 MP4/MP3 일괄 다운로드 목록, 비율 자동 고정 PIP, 고스트 클릭 통과(<code>Alt+Shift+G</code>), <code>.part</code> 실시간 재생
                     </p>
                   </div>
                 </div>
@@ -339,7 +339,7 @@
                 <span class="welcome-yt-icon" aria-hidden="true">
                   <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none"/></svg>
                 </span>
-                <input id="welcome-yt-input" class="welcome-yt-input" type="text" placeholder="유튜브 링크 붙여넣기 → Enter로 MP4 화질 선택 · MP3 즉시 다운로드" autocomplete="off" spellcheck="false" />
+                <input id="welcome-yt-input" class="welcome-yt-input" type="text" placeholder="유튜브 링크 붙여넣기 → Enter로 MP4 화질 선택 · 목록에 담아 MP3/MP4 일괄 다운로드" autocomplete="off" spellcheck="false" />
                 <button id="btn-welcome-yt-go" class="btn-pill btn-yt-header" type="button">가져오기</button>
               </div>
 
@@ -789,7 +789,7 @@
           <div class="update-card-head">
             <div>
               <strong>자동 업데이트</strong>
-              <span id="app-version-badge" class="status-tag status-ok mono">v2.4.0</span>
+              <span id="app-version-badge" class="status-tag status-ok mono">v2.5.0</span>
             </div>
             <span id="update-status-badge" class="status-tag">대기 중</span>
           </div>
@@ -988,6 +988,11 @@
               <small class="yt-qual-sub">가벼운 용량</small>
             </button>
           </div>
+
+          <div class="yt-preview-actions">
+            <button id="btn-yt-enqueue" class="btn-cta btn-cta-primary yt-enqueue-btn" type="button" disabled>+ 목록에 추가</button>
+            <button id="btn-yt-quick-start" class="btn-cta btn-cta-secondary yt-quick-btn" type="button" disabled>바로 받기</button>
+          </div>
         </div>
 
         <div class="yt-save-row">
@@ -1004,27 +1009,30 @@
         <div class="yt-footer-row">
           <label class="yt-autoplay-toggle">
             <input id="toggle-yt-autoplay" type="checkbox" class="toggle-switch" checked />
-            <span>완료 후 AETHER에서 바로 재생</span>
+            <span>목록 완료 후 AETHER 재생목록에서 바로 재생</span>
           </label>
-          <button id="btn-yt-start" class="btn-cta btn-cta-primary yt-start-btn" type="button" disabled>유튜브 링크를 먼저 조회하세요</button>
         </div>
 
-        <div id="yt-dl-progress-box" class="yt-dl-progress-box hidden">
-          <div class="yt-dl-progress-head">
-            <span id="yt-dl-status-text">다운로드 준비 중...</span>
-            <span id="yt-dl-stats-text" class="mono"></span>
-          </div>
-          <div class="yt-dl-bar-row">
-            <div class="yt-progress-track">
-              <div id="yt-dl-progress-fill" class="yt-progress-fill"></div>
+        <div id="yt-queue-section" class="yt-queue-section">
+          <div class="yt-queue-header">
+            <div class="yt-queue-title-row">
+              <span>다운로드 목록</span>
+              <span id="yt-queue-summary" class="status-tag mono">0개</span>
             </div>
-            <button id="btn-yt-cancel" class="tool-pill-btn" type="button">중단</button>
+            <div class="yt-queue-controls">
+              <button id="btn-yt-queue-start" class="tool-pill-btn tool-pill-accent hidden" type="button">목록 다운로드 시작</button>
+              <button id="btn-yt-queue-stop" class="tool-pill-btn hidden" type="button">전체 중단</button>
+              <button id="btn-yt-queue-play-all" class="tool-pill-btn tool-pill-install hidden" type="button">완료 전체 재생</button>
+              <button id="btn-yt-queue-clear-done" class="tool-pill-btn hidden" type="button">완료 정리</button>
+              <button id="btn-yt-queue-clear" class="tool-pill-btn hidden" type="button">전체 비우기</button>
+            </div>
           </div>
-        </div>
 
-        <div id="yt-history-section" class="yt-history-section hidden">
-          <div class="yt-history-head">최근 받은 유튜브 미디어</div>
-          <div id="yt-history-list" class="yt-history-list"></div>
+          <div id="yt-queue-empty" class="yt-queue-empty">
+            링크를 조회한 뒤 <strong>+ 목록에 추가</strong>를 눌러 여러 영상 · MP3를 목록에 담고 한 번에 받으세요.
+          </div>
+
+          <div id="yt-queue-list" class="yt-queue-list hidden"></div>
         </div>
       </div>
     </div>

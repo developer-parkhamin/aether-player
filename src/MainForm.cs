@@ -123,6 +123,7 @@ namespace AetherPlayer
         private CancellationTokenSource _ytFetchCts;
         private CancellationTokenSource _ytDownloadCts;
         private bool _ytDownloading;
+        private string _ytActiveJobId;
 
         [DllImport("user32.dll")]
         private static extern bool ReleaseCapture();
@@ -646,7 +647,7 @@ namespace AetherPlayer
                     break;
 
                 case "yt:cancel":
-                    CancelYoutubeOperations();
+                    CancelYoutubeDownload();
                     break;
             }
         }
@@ -1482,6 +1483,7 @@ namespace AetherPlayer
                 { "saveDir", s.SaveDir },
                 { "autoPlay", s.AutoPlay },
                 { "busy", _ytDownloading },
+                { "activeJobId", _ytActiveJobId ?? string.Empty },
                 { "hasYtdlp", st.HasYtdlp },
                 { "hasQuickJs", st.HasQuickJs },
                 { "hasFfmpeg", st.HasFfmpeg },
@@ -1576,6 +1578,11 @@ namespace AetherPlayer
             {
                 PostToast("파일 위치 열기 실패: " + ex.Message, "warn");
             }
+        }
+
+        private void CancelYoutubeDownload()
+        {
+            try { if (_ytDownloadCts != null) _ytDownloadCts.Cancel(); } catch { }
         }
 
         private void CancelYoutubeOperations()
@@ -1717,9 +1724,16 @@ namespace AetherPlayer
 
         private async Task RunYoutubeDownloadAsync(Dictionary<string, object> msg)
         {
+            string jobId = GetString(msg, "jobId", string.Empty);
             if (_ytDownloading)
             {
                 PostToast("이미 유튜브 다운로드가 진행 중입니다", "warn");
+                PostToUi(new Dictionary<string, object>
+                {
+                    { "type", "yt:error" },
+                    { "jobId", jobId },
+                    { "error", "이미 다른 작업이 진행 중입니다." }
+                });
                 return;
             }
 
@@ -1733,16 +1747,19 @@ namespace AetherPlayer
             req.SaveDir = string.IsNullOrWhiteSpace(GetString(msg, "saveDir", string.Empty))
                 ? settings.SaveDir
                 : GetString(msg, "saveDir", string.Empty);
-            req.AutoPlay = GetBool(msg, "autoPlay", settings.AutoPlay);
+            req.AutoPlay = GetBool(msg, "autoPlay", false);
             req.Title = GetString(msg, "title", string.Empty);
             req.Thumbnail = GetString(msg, "thumbnail", string.Empty);
             req.QualityLabel = GetString(msg, "qualityLabel", string.Empty);
 
-            settings.AutoPlay = req.AutoPlay;
-            if (!string.IsNullOrWhiteSpace(req.SaveDir)) settings.SaveDir = req.SaveDir;
-            YoutubeDownloader.SaveSettings(settings);
+            if (!string.IsNullOrWhiteSpace(req.SaveDir) && !string.Equals(settings.SaveDir, req.SaveDir, StringComparison.OrdinalIgnoreCase))
+            {
+                settings.SaveDir = req.SaveDir;
+                YoutubeDownloader.SaveSettings(settings);
+            }
 
             _ytDownloading = true;
+            _ytActiveJobId = jobId;
             CancellationTokenSource cts = new CancellationTokenSource();
             _ytDownloadCts = cts;
             PushYoutubeState();
@@ -1759,6 +1776,7 @@ namespace AetherPlayer
                             if (IsDisposed) return;
                             Dictionary<string, object> payload = new Dictionary<string, object>(prog);
                             payload["type"] = "yt:progress";
+                            payload["jobId"] = jobId;
                             PostToUi(payload);
                         }));
                     },
@@ -1766,6 +1784,7 @@ namespace AetherPlayer
                 ).ConfigureAwait(false);
 
                 _ytDownloading = false;
+                _ytActiveJobId = null;
                 if (!IsDisposed && IsHandleCreated)
                 {
                     BeginInvoke(new Action(delegate
@@ -1775,6 +1794,7 @@ namespace AetherPlayer
                         PostToUi(new Dictionary<string, object>
                         {
                             { "type", "yt:done" },
+                            { "jobId", jobId },
                             { "filePath", res.FilePath },
                             { "fileName", res.FileName },
                             { "format", res.Format },
@@ -1796,13 +1816,18 @@ namespace AetherPlayer
             catch (OperationCanceledException)
             {
                 _ytDownloading = false;
+                _ytActiveJobId = null;
                 if (!IsDisposed && IsHandleCreated)
                 {
                     BeginInvoke(new Action(delegate
                     {
                         if (IsDisposed) return;
                         PushYoutubeState();
-                        PostToUi(new Dictionary<string, object> { { "type", "yt:cancelled" } });
+                        PostToUi(new Dictionary<string, object>
+                        {
+                            { "type", "yt:cancelled" },
+                            { "jobId", jobId }
+                        });
                         PostToast("유튜브 다운로드가 취소되었습니다", string.Empty);
                     }));
                 }
@@ -1810,6 +1835,7 @@ namespace AetherPlayer
             catch (Exception ex)
             {
                 _ytDownloading = false;
+                _ytActiveJobId = null;
                 if (!IsDisposed && IsHandleCreated)
                 {
                     BeginInvoke(new Action(delegate
@@ -1819,6 +1845,7 @@ namespace AetherPlayer
                         PostToUi(new Dictionary<string, object>
                         {
                             { "type", "yt:error" },
+                            { "jobId", jobId },
                             { "error", ex.Message }
                         });
                         PostToast("유튜브 다운로드 실패: " + ex.Message, "warn");

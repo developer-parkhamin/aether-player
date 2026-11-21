@@ -22,7 +22,7 @@
 <br />
 
 <a href="https://github.com/developer-parkhamin/aether-player/releases/latest/download/AETHER.Player.Setup.exe">
-  <img src="https://img.shields.io/badge/Download-AETHER%20Player%20Setup.exe%20(v2.4.0)-38BDF8?style=for-the-badge&logo=windows&logoColor=04101A" alt="Download AETHER Player Setup.exe" />
+  <img src="https://img.shields.io/badge/Download-AETHER%20Player%20Setup.exe%20(v2.5.0)-38BDF8?style=for-the-badge&logo=windows&logoColor=04101A" alt="Download AETHER Player Setup.exe" />
 </a>
 
 <p>
@@ -38,7 +38,7 @@
 ---
 
 **AETHER Player**는 영상 시청과 멀티태스킹에 최적화된 Windows 네이티브 데스크톱 미디어 플레이어입니다.  
-여백 없는 **Edge-to-Edge 플로팅 PIP**, 다른 창 조작을 방해하지 않는 **고스트 모드(클릭 통과)**, **유튜브 MP4(해상도 선택) · MP3 원클릭 다운로드**, 다운로드가 완료되지 않은 **`.part` 파일 실시간 스트리밍**, **5-Band 오디오 EQ**까지 하나의 가벼운 앱에 담았습니다.
+여백 없는 **Edge-to-Edge 플로팅 PIP**, 다른 창 조작을 방해하지 않는 **고스트 모드(클릭 통과)**, **유튜브 MP4(해상도 선택) · MP3 일괄 다운로드 목록**, 다운로드가 완료되지 않은 **`.part` 파일 실시간 스트리밍**, **5-Band 오디오 EQ**까지 하나의 가벼운 앱에 담았습니다.
 
 ---
 
@@ -46,7 +46,7 @@
 
 | 배포판 | 설명 | 다운로드 |
 | :--- | :--- | :--- |
-| **AETHER Player Setup.exe** | High-DPI Windows 설치 마법사 (표준 / 최소 설치, 자동 업데이트 지원) | **[최신 버전 다운로드 (v2.4.0)](https://github.com/developer-parkhamin/aether-player/releases/latest/download/AETHER.Player.Setup.exe)** |
+| **AETHER Player Setup.exe** | High-DPI Windows 설치 마법사 (표준 / 최소 설치, 자동 업데이트 지원) | **[최신 버전 다운로드 (v2.5.0)](https://github.com/developer-parkhamin/aether-player/releases/latest/download/AETHER.Player.Setup.exe)** |
 | **이전 버전 / 변경 내역** | 버전별 릴리즈 노트 및 SHA-256 체크섬 | **[GitHub Releases 바로가기](https://github.com/developer-parkhamin/aether-player/releases)** |
 
 ### 빠른 설치 방법
@@ -76,11 +76,11 @@
 - **스마트 위치 & 크기 프리셋**: 4모서리 자석 스냅, `S` / `M` / `L` 원클릭 크기 프리셋, `35% ~ 100%` 투명도 조절, 어디서나 작동하는 전역 단축키(`Alt+Shift+P` · `Alt+Shift+Space`)를 지원합니다.
 - **분리형 미니 PIP 창**: 필요 시 OS 독립 PIP 창으로도 전환할 수 있으며, MP3 오디오 재생 중에는 실시간 스펙트럼 비주얼라이저를 미니 창에 출력합니다.
 
-### 2. 유튜브 MP4 / MP3 원클릭 다운로드
-- **링크 복사만으로 끝나는 초간편 저장**: 브라우저에서 유튜브 링크를 복사한 뒤 앱에서 **`Ctrl+V`**를 누르거나 상단 **유튜브** 버튼을 열면 링크를 자동으로 인식해 영상 정보를 불러옵니다.
-- **MP4 해상도 직접 선택**: `2160p 4K · 1440p 2K · 1080p FHD · 720p HD` 및 60fps, 세로 쇼츠(9:16)까지 원하는 화질과 예상 용량을 보고 선택할 수 있습니다.
-- **MP3 음원 추출 + 앨범 커버 자동 삽입**: `320 / 192 / 128 kbps` 음질 선택과 함께 영상 썸네일 및 메타데이터를 MP3에 자동으로 담아 오디오 스튜디오에서 감상할 수 있습니다.
-- **별도 사전 설치 없음 & 즉시 재생**: 첫 사용 시 필요한 엔진을 백그라운드에서 자동으로 구성하며, 완료 즉시 AETHER에서 바로 재생할 수 있습니다.
+### 2. 유튜브 MP4 / MP3 원클릭 일괄 다운로드
+- **링크 복사만으로 끝나는 초간편 조회**: 브라우저에서 유튜브 링크를 복사한 뒤 앱에서 **`Ctrl+V`**를 누르거나 상단 **유튜브** 버튼을 열면 링크를 자동으로 인식해 영상 정보를 불러옵니다.
+- **멀티 다운로드 대기열 (목록 추가 · 일괄 저장)**: 원하는 화질/MP3 형식을 고른 뒤 **`+ 목록에 추가`**를 반복해 여러 개의 유튜브 영상·음원을 목록에 담아 한 번에 순차 다운로드할 수 있습니다. (진행 중에도 새 링크 추가 가능)
+- **MP4 해상도 직접 선택 & MP3 앨범 커버**: `2160p 4K · 1440p 2K · 1080p FHD · 720p HD` 및 60fps·세로 쇼츠(9:16) 해상도 선택, `320 / 192 / 128 kbps` MP3 변환 및 썸네일·메타데이터 자동 삽입을 지원합니다.
+- **제로 세팅 엔진 & 자동 재생목록 연동**: 첫 사용 시 필요한 엔진을 백그라운드에서 자동 구성하며, 목록 다운로드가 끝나면 AETHER 재생목록으로 바로 이어서 재생할 수 있습니다.
 
 ### 3. 다운로드 중인 `.part` 파일 실시간 스트리밍
 - 브라우저나 다운로더가 파일을 내려받는 도중에도 `.mp4.part`, `.webm.part`, `.mkv.part`, `.m4v.part`, `.mp3.part`, `.part` 파일을 **파일 잠금 없이 즉시 열어 재생**할 수 있습니다.
