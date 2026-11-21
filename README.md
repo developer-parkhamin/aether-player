@@ -125,34 +125,3 @@
 | `Shift + A` / `B` | A-B 구간 반복 / 북마크 추가 | `G` / `H` | 자막 싱크 `-0.1s` / `+0.1s` |
 | `V` / `A` | 비주얼라이저 / 앰비라이트 | `S` / `Q` | 현재 프레임 캡처 / 재생목록 토글 |
 | `Ctrl + O` | 파일 열기 | `Ctrl + W` | 재생 종료 후 메인 화면으로 이동 |
-
----
-
-<details>
-<summary><strong>개발자용 소스 빌드 및 릴리즈 배포 안내</strong></summary>
-
-<br />
-
-이 저장소는 별도의 무거운 Node/Electron 번들러 없이 Windows 기본 내장 **C# 컴파일러(`csc.exe` v4.0)**, **WinForms/WPF**, **Edge WebView2 SDK**만으로 단독 바이너리를 빌드합니다.
-
-### 로컬 빌드
-
-```powershell
-# AETHER Player.exe 및 dist\AETHER Player Setup.exe 빌드
-.\build-installer.ps1
-```
-
-빌드 완료 후 생성되는 파일:
-- `AETHER Player.exe` — 단독 실행 포터블 바이너리
-- `dist\AETHER Player Setup.exe` — 페이로드가 내장된 WPF 설치 프로그램
-- `dist\latest.json` — 자동 업데이터용 버전 · SHA-256 매니페스트
-
-### 자체 검증 및 GitHub 릴리즈 배포
-
-`src/AppConfig.cs`에서 버전과 `UpdateGithubRepo`를 설정하고 `gh auth login` 로그인 상태에서 아래 스크립트를 실행하면 빌드, 자체 검증 테스트(`--self-test`, `--verify-payload`, `--self-test-updater`), Git 푸시 및 GitHub Releases 업로드를 한 번에 수행합니다.
-
-```powershell
-.\publish-release.ps1
-```
-
-</details>

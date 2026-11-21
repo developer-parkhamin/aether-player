@@ -7,3 +7,4 @@ _*.txt
 *.tmp
 *.log
 update-config.json
+/publish-release.ps1
