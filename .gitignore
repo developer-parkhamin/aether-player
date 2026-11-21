@@ -1,0 +1,9 @@
+# Build outputs & installer staging
+AETHER Player.exe
+dist/
+_installer_stage/
+_payload.zip
+_*.txt
+*.tmp
+*.log
+update-config.json

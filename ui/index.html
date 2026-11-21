@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AETHER — Desktop Cinema &amp; Audio Studio</title>
+  <link rel="stylesheet" href="./css/theme.css" />
+  <link rel="stylesheet" href="./css/player.css" />
+  <link rel="stylesheet" href="./css/panels.css" />
+  <link rel="stylesheet" href="./css/desktop-pip.css" />
+</head>
+<body>
+  <div id="app-root"
+       data-media-kind="empty"
+       data-playing="false"
+       data-muted="false"
+       data-desktop-pip="false"
+       data-separate-pip="false"
+       data-ghost="false"
+       data-topmost="false"
+       data-maximized="false"
+       data-fullscreen="false"
+       data-ambilight="true"
+       data-playlist-open="false">
+
+    <!-- Ambient Atmospheric Backdrop -->
+    <div id="ambient-backdrop" aria-hidden="true">
+      <div class="ambient-orb ambient-orb-a"></div>
+      <div class="ambient-orb ambient-orb-b"></div>
+      <canvas id="ambilight-canvas" width="96" height="54"></canvas>
+    </div>
+
+    <!-- Global Drag-and-Drop Overlay -->
+    <div id="global-drop-veil" class="hidden" aria-hidden="true">
+      <div class="drop-veil-card glass-panel">
+        <div class="drop-veil-ring">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        </div>
+        <h2>여기에 미디어 파일을 놓으세요</h2>
+        <p>MP4 · WebM · MKV · MP3 · .part 및 자막(.SRT/.VTT)·가사(.LRC) 지원</p>
+      </div>
+    </div>
+
+    <!-- Custom Frameless Desktop Titlebar -->
+    <header id="top-header" class="desktop-titlebar glass-bar">
+      <div id="titlebar-drag-zone" class="titlebar-drag-zone">
+        <div id="brand-logo" title="AETHER Desktop Studio v2.2">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+          </span>
+          <span class="brand-name">AETHER</span>
+          <span class="brand-tag">DESKTOP</span>
+        </div>
+
+        <div id="now-playing-pill" class="now-playing-pill hidden">
+          <span id="now-playing-badge" class="format-badge">MP4</span>
+          <span id="now-playing-title" class="now-playing-title">트랙 없음</span>
+          <span id="now-playing-meta" class="now-playing-meta mono"></span>
+        </div>
+
+        <div id="sleep-timer-badge" class="sleep-timer-badge hidden mono" title="취침 타이머 작동 중"></div>
+      </div>
+
+      <div class="header-actions">
+        <input id="file-input" type="file" multiple accept=".mp4,.webm,.mkv,.mp3,.mp4.part,.webm.part,.mkv.part,.mp3.part,.part,.m4v,.mov,.wav,.ogg,.flac,.m4a,.srt,.vtt,.lrc,video/*,audio/*" hidden />
+        <input id="subtitle-input" type="file" accept=".srt,.vtt" hidden />
+        <input id="lyrics-input" type="file" accept=".lrc" hidden />
+
+        <button id="btn-open-files" class="btn-pill btn-primary-subtle" type="button" title="파일 열기 (Ctrl+O)">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span>파일 열기</span>
+        </button>
+
+        <button id="btn-tools" class="btn-icon-pill" type="button" title="스튜디오 도구 (A-B 반복 / 보정 / 자막 / 타이머)" aria-expanded="false" aria-controls="tools-popover">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="btn-label-desktop">도구</span>
+        </button>
+
+        <button id="btn-eq" class="btn-icon-pill" type="button" title="이퀄라이저 (EQ)" aria-expanded="false" aria-controls="eq-popover">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+          <span class="btn-label-desktop">EQ</span>
+        </button>
+
+        <button id="btn-shortcuts" class="btn-icon-pill" type="button" title="단축키 안내 (?)" aria-expanded="false" aria-controls="shortcuts-modal">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+        </button>
+
+        <button id="btn-playlist-toggle" class="btn-icon-pill" type="button" title="재생목록 (Q)" aria-expanded="false" aria-controls="playlist-drawer">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          <span class="btn-label-desktop">재생목록</span>
+          <span id="playlist-count-badge" class="count-badge mono">0</span>
+        </button>
+
+        <span class="titlebar-sep" aria-hidden="true"></span>
+
+        <button id="btn-pin-topmost" class="win-btn win-btn-pin" type="button" title="창 항상 위에 고정 (T)" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+        </button>
+        <button id="btn-win-min" class="win-btn" type="button" title="최소화">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button id="btn-win-max" class="win-btn" type="button" title="최대화 / 복원">
+          <svg class="icon icon-win-max" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+          <svg class="icon icon-win-restore" viewBox="0 0 24 24"><rect x="4" y="8" width="12" height="12" rx="1.5"/><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/></svg>
+        </button>
+        <button id="btn-win-close" class="win-btn win-btn-close" type="button" title="닫기">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Top Edge Fullscreen Snap Hint -->
+    <div id="top-snap-hint" class="top-snap-hint hidden" aria-hidden="true">놓으면 전체화면으로 전환됩니다</div>
+
+    <!-- Non-intrusive Auto-Update Notification Banner -->
+    <div id="update-banner" class="update-banner hidden" role="status" aria-live="polite">
+      <div class="update-banner-left">
+        <span class="update-dot"></span>
+        <span id="update-banner-text">새 버전이 출시되었습니다</span>
+        <div id="update-progress-bar" class="update-progress-bar hidden">
+          <div id="update-progress-fill" class="update-progress-fill"></div>
+        </div>
+      </div>
+      <div class="update-banner-actions">
+        <button id="btn-banner-update" class="btn-pill btn-primary-subtle" type="button">지금 업데이트</button>
+        <button id="btn-banner-dismiss" class="tool-icon-btn" type="button" title="나중에">
+          <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main id="workspace-grid">
+      <section id="stage-column" aria-label="미디어 스테이지">
+        <div id="player-stage" class="player-stage" tabindex="0">
+
+          <!-- Unified Media Shell -->
+          <div id="stage-media-shell" class="stage-media-shell">
+            <video id="media-element" playsinline preload="metadata" crossorigin="anonymous">
+              <track id="subtitle-track" kind="subtitles" srclang="ko" label="자막" />
+            </video>
+
+            <canvas id="audio-visualizer-canvas"></canvas>
+
+            <div id="audio-meta-overlay" class="audio-meta-overlay" aria-live="polite">
+              <div id="audio-art-frame" class="audio-art-frame">
+                <img id="audio-art-img" alt="앨범 아트워크" class="hidden" />
+                <div id="audio-vinyl-fallback" class="audio-vinyl-fallback" aria-hidden="true">
+                  <div class="vinyl-disc">
+                    <div class="vinyl-grooves"></div>
+                    <div class="vinyl-center"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="audio-text-block">
+                <div class="audio-badges-row">
+                  <span id="audio-track-badge" class="format-badge">MP3</span>
+                  <span class="studio-chip">AUDIO STUDIO</span>
+                </div>
+                <h1 id="audio-track-title" class="audio-track-title">트랙 제목</h1>
+                <p id="audio-track-artist" class="audio-track-artist">아티스트 정보 없음</p>
+                <p id="audio-track-album" class="audio-track-album"></p>
+              </div>
+            </div>
+
+            <!-- Synced .LRC Lyrics Overlay (Audio Mode) -->
+            <div id="lyrics-overlay" class="lyrics-overlay hidden" aria-live="polite">
+              <div id="lyric-prev" class="lyric-line lyric-dim"></div>
+              <div id="lyric-curr" class="lyric-line lyric-active"></div>
+              <div id="lyric-next" class="lyric-line lyric-dim"></div>
+            </div>
+
+            <!-- Custom Subtitle Overlay (Supports Sync Shift, Style & PIP Scaling) -->
+            <div id="subtitle-display" class="subtitle-display hidden" aria-live="polite"></div>
+          </div>
+
+          <!-- Interactive Stage Surface -->
+          <div id="stage-click-zone" aria-hidden="true"></div>
+          <div id="stage-top-drag-strip" class="stage-top-drag-strip" aria-hidden="true"></div>
+
+          <!-- Ghost Mode Indicator Banner -->
+          <div id="pip-ghost-banner" class="pip-ghost-banner hidden">
+            고스트 모드 (클릭 통과) · <span class="mono">Alt+Shift+G</span> 해제
+          </div>
+
+          <!-- Flagship Native Desktop PIP HUD -->
+          <div id="desktop-pip-hud" class="desktop-pip-hud" role="region" aria-label="데스크톱 PIP 컨트롤">
+            <div id="pip-hud-top" class="pip-hud-top">
+              <div class="pip-hud-title-group">
+                <span class="pip-live-dot"></span>
+                <span id="pip-hud-badge" class="format-badge">MP4</span>
+                <span id="pip-hud-title" class="pip-hud-title">AETHER PIP</span>
+              </div>
+
+              <div class="pip-hud-top-actions">
+                <div class="pip-mini-group" title="화면 모서리 스냅">
+                  <button id="btn-pip-snap-tl" class="pip-mini-btn" type="button" title="좌측 상단으로 스냅">↖</button>
+                  <button id="btn-pip-snap-tr" class="pip-mini-btn" type="button" title="우측 상단으로 스냅">↗</button>
+                  <button id="btn-pip-snap-bl" class="pip-mini-btn" type="button" title="좌측 하단으로 스냅">↙</button>
+                  <button id="btn-pip-snap-br" class="pip-mini-btn" type="button" title="우측 하단으로 스냅">↘</button>
+                </div>
+
+                <div class="pip-mini-group" title="PIP 크기 프리셋">
+                  <button id="btn-pip-size-s" class="pip-mini-btn mono" type="button" title="작게 (356px)">S</button>
+                  <button id="btn-pip-size-m" class="pip-mini-btn mono" type="button" title="보통 (460px)">M</button>
+                  <button id="btn-pip-size-l" class="pip-mini-btn mono" type="button" title="크게 (640px)">L</button>
+                </div>
+
+                <button id="btn-pip-fit-aspect" class="pip-mini-btn pip-aspect-btn" type="button" title="영상 비율에 창 딱 맞추기">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h2v4H7zM15 10h2v4h-2z"/></svg>
+                </button>
+
+                <button id="btn-pip-ghost" class="pip-mini-btn pip-ghost-btn" type="button" title="고스트 모드 — 클릭 통과 (Alt+Shift+G)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+                </button>
+
+                <button id="btn-pip-hud-return" class="pip-return-pill" type="button" title="전체 모드로 복귀 (P)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span>복귀</span>
+                </button>
+                <button id="btn-pip-hud-close" class="pip-close-btn" type="button" title="프로그램 닫기">
+                  <svg class="icon" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="pip-bottom-stack">
+              <div id="pip-lyric-line" class="pip-lyric-line hidden"></div>
+              <div id="pip-hud-bottom" class="pip-hud-bottom">
+                <div id="pip-scrubber-track" class="pip-scrubber-track" role="slider" aria-label="PIP 탐색 바">
+                  <div id="pip-scrubber-fill" class="pip-scrubber-fill"></div>
+                </div>
+
+                <div class="pip-hud-controls-row">
+                  <div class="pip-hud-left">
+                    <button id="btn-pip-prev" class="pip-ctrl-btn" type="button" title="이전 트랙">
+                      <svg class="icon" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20" fill="currentColor" stroke="none"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button id="btn-pip-play" class="pip-ctrl-btn pip-ctrl-play" type="button" title="재생 / 일시정지 (Space)">
+                      <svg class="icon icon-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+                      <svg class="icon icon-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/></svg>
+                    </button>
+                    <button id="btn-pip-next" class="pip-ctrl-btn" type="button" title="다음 트랙">
+                      <svg class="icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor" stroke="none"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button id="btn-pip-back10" class="pip-ctrl-btn mono" type="button" title="10초 뒤로">-10</button>
+                    <button id="btn-pip-fwd10" class="pip-ctrl-btn mono" type="button" title="10초 앞으로">+10</button>
+                    <span id="pip-time-text" class="pip-time-text mono">00:00 / 00:00</span>
+                  </div>
+
+                  <div class="pip-hud-right">
+                    <button id="btn-pip-mute" class="pip-ctrl-btn" type="button" title="음소거 (M)">
+                      <svg class="icon icon-vol-high" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      <svg class="icon icon-vol-muted" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                    </button>
+                    <input id="pip-vol-slider" class="pip-mini-range" type="range" min="0" max="100" value="85" aria-label="PIP 볼륨" />
+                    <button id="btn-pip-speed" class="pip-speed-pill mono" type="button" title="재생 속도 변경">1.0×</button>
+                    <div class="pip-opacity-wrap" title="PIP 창 투명도 (35% ~ 100%)">
+                      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg>
+                      <input id="pip-opacity-slider" class="pip-mini-range pip-opacity-range" type="range" min="35" max="100" value="100" aria-label="PIP 투명도" />
+                      <span id="pip-opacity-label" class="pip-opacity-label mono">100%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="pip-resize-grip" class="pip-resize-grip" title="크기 조절" aria-hidden="true"></div>
+          </div>
+
+          <!-- Empty / Welcome Screen -->
+          <div id="welcome-screen" class="welcome-screen">
+            <div class="welcome-card glass-panel">
+              <div class="welcome-glow" aria-hidden="true"></div>
+              <div class="welcome-eyebrow">
+                <span class="pulse-dot"></span>
+                <span>WINDOWS NATIVE CINEMA &amp; PIP PLAYER v2.2</span>
+              </div>
+              <h1 class="welcome-title">AETHER 데스크톱 미디어 스튜디오</h1>
+              <p class="welcome-desc">
+                MP4 · WebM · MKV · MP3 · 다운로드 중 <code>.part</code> 파일까지 즉시 재생하고,<br />
+                고스트 모드(클릭 통과)와 전역 단축키(<code>Alt+Shift+P</code>)를 지원하는 네이티브 PIP 플레이어
+              </p>
+
+              <div class="format-chips" aria-label="지원 포맷">
+                <span class="format-chip">MP4 / .part</span>
+                <span class="format-chip">WEBM / .part</span>
+                <span class="format-chip">MKV</span>
+                <span class="format-chip">MP3 + LRC</span>
+                <span class="format-chip format-chip-sub">+ SRT / VTT</span>
+              </div>
+
+              <div class="welcome-cta-row">
+                <button id="btn-welcome-open" class="btn-cta btn-cta-primary" type="button">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>파일 열기 또는 창으로 드래그</span>
+                </button>
+              </div>
+
+              <div class="welcome-demo-divider"><span>또는 파일 없이 바로 테스트</span></div>
+
+              <div class="welcome-demo-row">
+                <button id="btn-demo-video" class="btn-demo" type="button">
+                  <span class="demo-icon-box">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none"/></svg>
+                  </span>
+                  <span class="demo-btn-text">
+                    <strong>데모 영상 재생</strong>
+                    <small>시네마 비주얼 + 데스크톱 PIP 즉시 테스트</small>
+                  </span>
+                </button>
+                <button id="btn-demo-audio" class="btn-demo" type="button">
+                  <span class="demo-icon-box demo-icon-audio">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  </span>
+                  <span class="demo-btn-text">
+                    <strong>데모 음악 재생</strong>
+                    <small>MP3 스튜디오 비주얼라이저 + 오디오 PIP</small>
+                  </span>
+                </button>
+              </div>
+
+              <!-- Recent Resume History -->
+              <div id="recent-history-section" class="recent-history-section hidden">
+                <div class="recent-header">
+                  <span>최근 이어보기</span>
+                  <button id="btn-clear-history" class="btn-text-subtle" type="button">기록 삭제</button>
+                </div>
+                <div id="recent-history-grid" class="recent-history-grid"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Placeholder shown ONLY when Mode 2 (Separate OS Video PIP) is popped out -->
+          <div id="pip-active-placeholder" class="pip-active-placeholder hidden" aria-live="polite">
+            <div class="pip-placeholder-card glass-panel">
+              <div class="pip-placeholder-badge">
+                <span class="pip-live-dot"></span>
+                <span id="pip-placeholder-mode">분리형 OS PIP에서 재생 중</span>
+              </div>
+              <h2 id="pip-placeholder-title" class="pip-placeholder-title">재생 중인 미디어</h2>
+              <p class="pip-placeholder-hint">별도의 항상 위 미니 창에서 재생 중입니다. 메인 창에서 재생목록이나 EQ를 자유롭게 조작할 수 있습니다.</p>
+              <div class="pip-placeholder-actions">
+                <button id="btn-pip-placeholder-prev" class="btn-circle-ghost" type="button" title="이전 트랙">
+                  <svg class="icon" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20" fill="currentColor" stroke="none"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                </button>
+                <button id="btn-pip-placeholder-play" class="btn-circle-primary" type="button" title="재생 / 일시정지">
+                  <svg class="icon icon-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+                  <svg class="icon icon-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/></svg>
+                </button>
+                <button id="btn-pip-placeholder-next" class="btn-circle-ghost" type="button" title="다음 트랙">
+                  <svg class="icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor" stroke="none"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+                <button id="btn-pip-return" class="btn-cta btn-cta-secondary" type="button">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span>메인 창으로 복귀</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Gesture Feedback HUD -->
+          <div id="gesture-hud" class="gesture-hud" aria-hidden="true">
+            <div id="gesture-icon" class="gesture-icon"></div>
+            <div id="gesture-label" class="gesture-label mono"></div>
+          </div>
+
+          <!-- Floating Glassmorphic Control Dock -->
+          <div id="control-dock" class="control-dock" role="region" aria-label="재생 컨트롤">
+            <div id="scrubber-wrap" class="scrubber-wrap">
+              <div id="scrub-preview-card" class="scrub-preview-card hidden" aria-hidden="true">
+                <canvas id="scrub-preview-canvas" width="160" height="90"></canvas>
+                <span id="scrub-preview-time" class="scrub-preview-time mono">00:00</span>
+              </div>
+              <div id="scrubber-track" class="scrubber-track" role="slider" aria-label="재생 위치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+                <div id="scrubber-buffered" class="scrubber-buffered"></div>
+                <div id="scrubber-ab-range" class="scrubber-ab-range hidden"></div>
+                <div id="scrubber-fill" class="scrubber-fill"></div>
+                <div id="scrubber-bookmarks" class="scrubber-bookmarks"></div>
+                <div id="scrubber-thumb" class="scrubber-thumb"></div>
+              </div>
+            </div>
+
+            <div id="dock-controls-row" class="dock-controls-row">
+              <div class="dock-group dock-left">
+                <button id="btn-prev" class="dock-btn" type="button" title="이전 트랙 (Shift+←)">
+                  <svg class="icon" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20" fill="currentColor" stroke="none"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                </button>
+
+                <button id="btn-play-pause" class="dock-btn dock-btn-play" type="button" title="재생 / 일시정지 (Space)">
+                  <svg class="icon icon-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+                  <svg class="icon icon-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/></svg>
+                </button>
+
+                <button id="btn-next" class="dock-btn" type="button" title="다음 트랙 (Shift+→)">
+                  <svg class="icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor" stroke="none"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+
+                <button id="btn-seek-back" class="dock-btn dock-btn-skip" type="button" title="10초 뒤로 (J)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                  <span class="skip-num mono">10</span>
+                </button>
+
+                <button id="btn-seek-fwd" class="dock-btn dock-btn-skip" type="button" title="10초 앞으로 (L)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+                  <span class="skip-num mono">10</span>
+                </button>
+
+                <div id="volume-group" class="volume-group">
+                  <button id="btn-mute" class="dock-btn" type="button" title="음소거 (M)">
+                    <svg class="icon icon-vol-high" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    <svg class="icon icon-vol-muted" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                  </button>
+                  <div class="volume-slider-wrap">
+                    <input id="volume-slider" type="range" min="0" max="100" value="85" aria-label="볼륨" />
+                    <span id="volume-value" class="volume-value mono">85%</span>
+                  </div>
+                </div>
+
+                <div id="time-display" class="time-display mono">
+                  <span id="time-current">00:00</span>
+                  <span class="time-sep">/</span>
+                  <span id="time-total">00:00</span>
+                </div>
+              </div>
+
+              <div class="dock-group dock-right">
+                <div class="speed-control-wrap">
+                  <button id="btn-speed" class="dock-chip-btn mono" type="button" title="재생 속도 ([ / ])" aria-expanded="false" aria-controls="speed-popover">
+                    <span id="speed-label">1.0×</span>
+                  </button>
+                  <div id="speed-popover" class="mini-popover glass-panel hidden" role="menu">
+                    <button class="speed-opt mono" data-speed="0.5" type="button">0.5×</button>
+                    <button class="speed-opt mono" data-speed="0.75" type="button">0.75×</button>
+                    <button class="speed-opt mono active" data-speed="1" type="button">1.0×</button>
+                    <button class="speed-opt mono" data-speed="1.25" type="button">1.25×</button>
+                    <button class="speed-opt mono" data-speed="1.5" type="button">1.5×</button>
+                    <button class="speed-opt mono" data-speed="2" type="button">2.0×</button>
+                    <button class="speed-opt mono" data-speed="2.5" type="button">2.5×</button>
+                  </div>
+                </div>
+
+                <button id="btn-viz-mode" class="dock-chip-btn audio-only-control" type="button" title="비주얼라이저 전환 (V)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M2 12h3l2-5 4 10 3-7 2 4 3-2h3"/></svg>
+                  <span id="viz-mode-label">오로라</span>
+                </button>
+
+                <button id="btn-subtitle" class="dock-btn video-only-control" type="button" title="자막 열기 / 토글 (C)">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 13h4M13 13h4M7 17h6"/></svg>
+                </button>
+
+                <button id="btn-ambilight" class="dock-btn active" type="button" title="앰비라이트 효과 (A)" aria-pressed="true">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                </button>
+
+                <button id="btn-screenshot" class="dock-btn" type="button" title="프레임 캡처 저장 (S)">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+
+                <!-- Flagship Split PIP Control -->
+                <div id="pip-split-control" class="pip-split-control">
+                  <button id="btn-pip-main" class="btn-pip-main" type="button" title="데스크톱 PIP 전환 (P / 전역 Alt+Shift+P)">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="11" y="11" width="9" height="7" rx="1.2" fill="currentColor" stroke="none"/></svg>
+                    <span id="pip-main-label">PIP 모드</span>
+                  </button>
+                  <button id="btn-pip-menu-toggle" class="btn-pip-caret" type="button" title="PIP 세부 설정 (Shift+P)" aria-expanded="false" aria-controls="pip-popover">
+                    <svg class="icon" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+                  </button>
+                </div>
+
+                <button id="btn-fullscreen" class="dock-btn" type="button" title="전체화면 (F)">
+                  <svg class="icon icon-fs-enter" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                  <svg class="icon icon-fs-exit" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PIP Mode Hub Popover -->
+          <div id="pip-popover" class="floating-popover glass-panel hidden" role="dialog" aria-label="PIP 모드 설정">
+            <div class="popover-header">
+              <div>
+                <h3>데스크톱 PIP 엔진</h3>
+                <p>MP4 · WebM · MKV · MP3 모든 포맷 항상 위 플로팅</p>
+              </div>
+              <span class="hotkey-pill mono">P</span>
+            </div>
+
+            <div class="pip-mode-list">
+              <button id="pip-opt-desktop" class="pip-mode-item selected" type="button" data-mode="desktop">
+                <div class="pip-mode-icon">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2.5"/><path d="M7 15h10M7 11h6"/></svg>
+                </div>
+                <div class="pip-mode-copy">
+                  <div class="pip-mode-title-row">
+                    <strong>데스크톱 플로팅 PIP (추천)</strong>
+                    <span id="pip-status-desktop" class="status-tag status-ok">네이티브</span>
+                  </div>
+                  <small>투명도 · 4모서리 스냅 · 고스트 클릭통과 · 비율 자동맞춤</small>
+                </div>
+              </button>
+
+              <button id="pip-opt-separate" class="pip-mode-item" type="button" data-mode="separate">
+                <div class="pip-mode-icon">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="15" rx="2"/><rect x="12" y="11" width="7" height="5" rx="1" fill="currentColor" stroke="none"/></svg>
+                </div>
+                <div class="pip-mode-copy">
+                  <div class="pip-mode-title-row">
+                    <strong>분리형 OS 미니 창 PIP</strong>
+                    <span id="pip-status-separate" class="status-tag status-ok">지원됨</span>
+                  </div>
+                  <small>메인 창을 유지한 채 별도의 미니 영상/MP3 스펙트럼 창 띄우기</small>
+                </div>
+              </button>
+            </div>
+
+            <div class="pip-opacity-setting">
+              <div class="pip-opacity-setting-head">
+                <span>PIP 창 기본 투명도</span>
+                <span id="popover-opacity-value" class="mono">100%</span>
+              </div>
+              <input id="popover-opacity-slider" type="range" min="35" max="100" value="100" aria-label="PIP 기본 투명도" />
+            </div>
+
+            <label class="pip-auto-row">
+              <span class="pip-auto-copy">
+                <strong>영상 비율 자동 맞춤</strong>
+                <small>가로(16:9/21:9)·세로(9:16) 비율에 맞춰 여백 제거</small>
+              </span>
+              <input id="toggle-pip-auto-aspect" type="checkbox" class="toggle-switch" checked />
+            </label>
+
+            <label class="pip-auto-row">
+              <span class="pip-auto-copy">
+                <strong>고스트 모드 — 클릭 통과 (<code class="mono">Alt+Shift+G</code>)</strong>
+                <small>PIP 창 위를 클릭해도 뒤쪽 게임/문서 창으로 클릭 전달</small>
+              </span>
+              <input id="toggle-pip-ghost" type="checkbox" class="toggle-switch" />
+            </label>
+
+            <label class="pip-auto-row">
+              <span class="pip-auto-copy">
+                <strong>Windows 전역 단축키</strong>
+                <small><code class="mono">Alt+Shift+P</code>(PIP) · <code class="mono">Alt+Shift+Space</code>(재생)</small>
+              </span>
+              <input id="toggle-global-hotkeys" type="checkbox" class="toggle-switch" checked />
+            </label>
+
+            <label class="pip-auto-row">
+              <span class="pip-auto-copy">
+                <strong>전체 창 항상 위에 고정 (T)</strong>
+                <small>일반 모드에서도 다른 창 위로 항상 유지</small>
+              </span>
+              <input id="toggle-topmost-pin" type="checkbox" class="toggle-switch" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Collapsible Playlist Sidebar -->
+      <aside id="playlist-drawer" class="playlist-drawer glass-panel" aria-label="재생목록">
+        <div class="playlist-header">
+          <div class="playlist-title-row">
+            <h2>재생목록</h2>
+            <div class="playlist-toolbar">
+              <button id="btn-shuffle" class="tool-icon-btn" type="button" title="셔플 재생" aria-pressed="false">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+              </button>
+              <button id="btn-repeat" class="tool-icon-btn" type="button" title="반복 모드: 끄기" data-repeat="off">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                <span class="repeat-one-badge mono">1</span>
+              </button>
+              <button id="btn-playlist-folder" class="tool-icon-btn" type="button" title="폴더 통째로 열기">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+              </button>
+              <button id="btn-playlist-import" class="tool-icon-btn" type="button" title="M3U 재생목록 불러오기">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
+              </button>
+              <button id="btn-playlist-export" class="tool-icon-btn" type="button" title="M3U 재생목록 저장">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              </button>
+              <button id="btn-playlist-add" class="tool-icon-btn" type="button" title="파일 추가">
+                <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button id="btn-clear-playlist" class="tool-icon-btn" type="button" title="목록 비우기">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="playlist-search-wrap">
+            <svg class="icon search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="playlist-search" type="search" placeholder="트랙, 파일명, 아티스트 검색..." autocomplete="off" />
+          </div>
+        </div>
+
+        <div id="playlist-empty" class="playlist-empty">
+          <p>아직 추가된 미디어가 없습니다</p>
+          <small>MP4, WebM, MKV, MP3, .part 파일을 드래그하거나 파일/폴더 열기를 눌러보세요</small>
+        </div>
+
+        <ul id="playlist-items" class="playlist-items" role="list"></ul>
+      </aside>
+    </main>
+
+    <!-- Pro Studio Tools Popover (A-B Loop, Video Filters, Subtitles/Lyrics, Timer/Settings) -->
+    <div id="tools-popover" class="floating-popover tools-popover glass-panel hidden" role="dialog" aria-label="스튜디오 도구">
+      <div class="popover-header">
+        <div>
+          <h3>스튜디오 도구</h3>
+          <p>구간 반복 · 화면 보정 · 자막/가사 · 타이머/연결</p>
+        </div>
+      </div>
+
+      <div class="tools-tabs" role="tablist">
+        <button class="tools-tab-btn active" type="button" data-tools-tab="loop">구간/북마크</button>
+        <button class="tools-tab-btn" type="button" data-tools-tab="video">화면 보정</button>
+        <button class="tools-tab-btn" type="button" data-tools-tab="subs">자막/가사</button>
+        <button class="tools-tab-btn" type="button" data-tools-tab="timer">타이머/설정</button>
+      </div>
+
+      <!-- Tab 1: A-B Loop & Bookmarks -->
+      <div class="tools-tab-panel" data-tools-panel="loop">
+        <div class="tool-section-label">구간 반복 (A-B Loop · Shift+A)</div>
+        <div class="tool-btn-row">
+          <button id="btn-ab-set-a" class="tool-pill-btn" type="button">A 시작점</button>
+          <button id="btn-ab-set-b" class="tool-pill-btn" type="button">B 끝점</button>
+          <button id="btn-ab-clear" class="tool-pill-btn" type="button">해제</button>
+        </div>
+        <div id="ab-status-label" class="tool-status-box mono">설정된 구간 없음</div>
+
+        <div class="tool-section-label" style="margin-top:14px;">타임라인 북마크 (단축키 B)</div>
+        <div class="tool-btn-row">
+          <button id="btn-bookmark-add" class="tool-pill-btn tool-pill-accent" type="button">+ 현재 위치 북마크 추가</button>
+        </div>
+        <div id="bookmark-list" class="bookmark-list"></div>
+      </div>
+
+      <!-- Tab 2: Video Transform & Color -->
+      <div class="tools-tab-panel hidden" data-tools-panel="video">
+        <div class="tool-section-label">회전 · 반전 · 화면 비율</div>
+        <div class="tool-btn-row">
+          <button id="btn-vid-rotate" class="tool-pill-btn" type="button" title="단축키 R">90° 회전 (R)</button>
+          <button id="btn-vid-flip" class="tool-pill-btn" type="button">좌우 반전</button>
+          <button id="btn-vid-fit" class="tool-pill-btn" type="button">비율: <span id="vid-fit-label">맞춤</span></button>
+        </div>
+
+        <div class="tool-slider-group">
+          <div class="tool-slider-head"><span>밝기</span><span id="filter-brightness-val" class="mono">100%</span></div>
+          <input id="filter-brightness" type="range" min="50" max="160" value="100" />
+        </div>
+        <div class="tool-slider-group">
+          <div class="tool-slider-head"><span>대비</span><span id="filter-contrast-val" class="mono">100%</span></div>
+          <input id="filter-contrast" type="range" min="50" max="160" value="100" />
+        </div>
+        <div class="tool-slider-group">
+          <div class="tool-slider-head"><span>채도</span><span id="filter-saturation-val" class="mono">100%</span></div>
+          <input id="filter-saturation" type="range" min="0" max="200" value="100" />
+        </div>
+        <button id="btn-vid-reset" class="btn-text-subtle" type="button" style="margin-top:8px;">화면 보정 초기화</button>
+      </div>
+
+      <!-- Tab 3: Subtitles & Lyrics -->
+      <div class="tools-tab-panel hidden" data-tools-panel="subs">
+        <div class="tool-section-label">자막 싱크 &amp; 스타일 (.SRT / .VTT)</div>
+        <div class="tool-btn-row">
+          <button id="btn-sub-load" class="tool-pill-btn tool-pill-accent" type="button">자막 파일 열기</button>
+          <button id="btn-lrc-load" class="tool-pill-btn" type="button">가사 (.LRC) 열기</button>
+        </div>
+
+        <div class="tool-sync-row">
+          <button id="btn-sub-sync-minus" class="tool-pill-btn mono" type="button">-0.1s (G)</button>
+          <span id="sub-sync-val" class="mono">0.0s</span>
+          <button id="btn-sub-sync-plus" class="tool-pill-btn mono" type="button">+0.1s (H)</button>
+          <button id="btn-sub-sync-reset" class="tool-pill-btn" type="button">0</button>
+        </div>
+
+        <div class="tool-slider-group">
+          <div class="tool-slider-head">
+            <span>자막 글자 크기</span>
+            <select id="sub-size-select" class="tool-select">
+              <option value="14">작게 (14px)</option>
+              <option value="17" selected>보통 (17px)</option>
+              <option value="21">크게 (21px)</option>
+              <option value="26">아주 크게 (26px)</option>
+            </select>
+          </div>
+        </div>
+        <div class="tool-slider-group">
+          <div class="tool-slider-head"><span>자막 하단 여백</span></div>
+          <input id="sub-pos-slider" type="range" min="50" max="170" value="94" />
+        </div>
+        <div class="tool-slider-group">
+          <div class="tool-slider-head"><span>자막 배경 진하기</span></div>
+          <input id="sub-bg-slider" type="range" min="0" max="95" value="76" />
+        </div>
+      </div>
+
+      <!-- Tab 4: Sleep Timer & Windows Integration -->
+      <div class="tools-tab-panel hidden" data-tools-panel="timer">
+        <div class="tool-section-label">취침 타이머</div>
+        <div id="sleep-preset-group" class="eq-presets">
+          <button class="eq-preset-btn active" type="button" data-sleep-min="0">끄기</button>
+          <button class="eq-preset-btn" type="button" data-sleep-min="15">15분</button>
+          <button class="eq-preset-btn" type="button" data-sleep-min="30">30분</button>
+          <button class="eq-preset-btn" type="button" data-sleep-min="60">60분</button>
+          <button class="eq-preset-btn" type="button" data-sleep-min="track">트랙 종료 후</button>
+        </div>
+        <div class="tool-slider-head" style="margin-bottom:10px;">
+          <span>타이머 만료 시 동작</span>
+          <select id="sleep-action-select" class="tool-select">
+            <option value="pause">재생 일시정지</option>
+            <option value="close">프로그램 종료</option>
+          </select>
+        </div>
+
+        <div class="assoc-box">
+          <div class="assoc-box-top">
+            <div class="assoc-box-text">
+              <strong>Windows 기본 프로그램 · 파일 연결</strong>
+            </div>
+            <span id="file-assoc-status" class="status-tag">확인 중</span>
+          </div>
+          <div class="assoc-box-actions">
+            <button id="btn-file-assoc-settings" class="tool-pill-btn tool-pill-accent" type="button">Windows 기본 앱 설정</button>
+            <button id="btn-file-assoc" class="tool-pill-btn" type="button">연결 프로그램 등록</button>
+          </div>
+          <small class="assoc-box-hint">Windows 11에서는 열린 설정 상단의 [기본값 설정]을 한 번 누르면 모든 형식이 전환됩니다.</small>
+        </div>
+
+        <div class="update-card">
+          <div class="update-card-head">
+            <div>
+              <strong>자동 업데이트</strong>
+              <span id="app-version-badge" class="status-tag status-ok mono">v2.2.0</span>
+            </div>
+            <span id="update-status-badge" class="status-tag">대기 중</span>
+          </div>
+
+          <div class="tool-slider-group">
+            <div class="tool-slider-head">
+              <span>업데이트 방식</span>
+              <select id="update-source-select" class="tool-select">
+                <option value="github">GitHub Releases</option>
+                <option value="feed">직접 JSON 피드 URL</option>
+              </select>
+            </div>
+            <input id="update-endpoint-input" class="update-input mono" type="text" placeholder="예: username/aether-player" autocomplete="off" />
+          </div>
+
+          <label class="pip-auto-row">
+            <span class="pip-auto-copy">
+              <strong>시작 시 자동 확인</strong>
+              <small>새 버전 발견 시 상단 배너로 즉시 알림</small>
+            </span>
+            <input id="toggle-auto-update" type="checkbox" class="toggle-switch" checked />
+          </label>
+
+          <div class="tool-btn-row" style="margin-top:10px;margin-bottom:6px;">
+            <button id="btn-update-save" class="tool-pill-btn" type="button">설정 저장</button>
+            <button id="btn-update-check" class="tool-pill-btn tool-pill-accent" type="button">업데이트 확인</button>
+            <button id="btn-update-install" class="tool-pill-btn tool-pill-install hidden" type="button">지금 설치 · 재시작</button>
+          </div>
+          <div id="update-status-detail" class="tool-status-box">GitHub 저장소(owner/repo) 또는 latest.json URL을 입력하면 원클릭 자동 업데이트가 작동합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Equalizer Popover -->
+    <div id="eq-popover" class="floating-popover eq-popover glass-panel hidden" role="dialog" aria-label="5-밴드 이퀄라이저">
+      <div class="popover-header">
+        <div>
+          <h3>스튜디오 이퀄라이저</h3>
+          <p>5-Band 파라메트릭 EQ &amp; 프리앰프</p>
+        </div>
+        <button id="btn-eq-reset" class="btn-text-subtle" type="button">초기화</button>
+      </div>
+
+      <div id="eq-preset-group" class="eq-presets">
+        <button class="eq-preset-btn active" type="button" data-eq-preset="flat">플랫</button>
+        <button class="eq-preset-btn" type="button" data-eq-preset="bass">베이스 부스트</button>
+        <button class="eq-preset-btn" type="button" data-eq-preset="cinema">시네마</button>
+        <button class="eq-preset-btn" type="button" data-eq-preset="vocal">보컬 선명</button>
+        <button class="eq-preset-btn" type="button" data-eq-preset="night">야간 모드</button>
+      </div>
+
+      <div id="eq-sliders" class="eq-bands-grid">
+        <div class="eq-band">
+          <span id="eq-val-0" class="eq-db mono">0dB</span>
+          <input class="eq-range" type="range" min="-12" max="12" step="0.5" value="0" data-eq-band="0" aria-label="60Hz" />
+          <span class="eq-freq mono">60Hz</span>
+        </div>
+        <div class="eq-band">
+          <span id="eq-val-1" class="eq-db mono">0dB</span>
+          <input class="eq-range" type="range" min="-12" max="12" step="0.5" value="0" data-eq-band="1" aria-label="230Hz" />
+          <span class="eq-freq mono">230Hz</span>
+        </div>
+        <div class="eq-band">
+          <span id="eq-val-2" class="eq-db mono">0dB</span>
+          <input class="eq-range" type="range" min="-12" max="12" step="0.5" value="0" data-eq-band="2" aria-label="910Hz" />
+          <span class="eq-freq mono">910Hz</span>
+        </div>
+        <div class="eq-band">
+          <span id="eq-val-3" class="eq-db mono">0dB</span>
+          <input class="eq-range" type="range" min="-12" max="12" step="0.5" value="0" data-eq-band="3" aria-label="3.6kHz" />
+          <span class="eq-freq mono">3.6k</span>
+        </div>
+        <div class="eq-band">
+          <span id="eq-val-4" class="eq-db mono">0dB</span>
+          <input class="eq-range" type="range" min="-12" max="12" step="0.5" value="0" data-eq-band="4" aria-label="14kHz" />
+          <span class="eq-freq mono">14k</span>
+        </div>
+      </div>
+
+      <div class="eq-boost-row">
+        <div class="eq-boost-labels">
+          <span>볼륨 부스트 (게인)</span>
+          <span id="boost-value" class="mono">100%</span>
+        </div>
+        <input id="boost-slider" type="range" min="100" max="200" step="5" value="100" aria-label="볼륨 부스트" />
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcuts-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="키보드 단축키">
+      <div class="modal-card glass-panel">
+        <div class="modal-header">
+          <div>
+            <h2>키보드 단축키</h2>
+            <p>앱 내부 및 Windows 전역 단축키 안내</p>
+          </div>
+          <button id="btn-close-shortcuts" class="tool-icon-btn" type="button" title="닫기">
+            <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="shortcuts-grid">
+          <div class="shortcut-row"><span>재생 / 일시정지</span><kbd>Space</kbd> / <kbd>K</kbd></div>
+          <div class="shortcut-row"><span>데스크톱 PIP 전환</span><kbd>P</kbd></div>
+          <div class="shortcut-row"><span>전역 PIP 전환 (어디서나)</span><kbd>Alt+Shift+P</kbd></div>
+          <div class="shortcut-row"><span>전역 고스트 모드 (클릭통과)</span><kbd>Alt+Shift+G</kbd></div>
+          <div class="shortcut-row"><span>전역 재생/정지 (어디서나)</span><kbd>Alt+Shift+Space</kbd></div>
+          <div class="shortcut-row"><span>PIP 설정 / 항상 위 고정</span><kbd>Shift+P</kbd> / <kbd>T</kbd></div>
+          <div class="shortcut-row"><span>A-B 구간 반복 / 북마크</span><kbd>Shift+A</kbd> / <kbd>B</kbd></div>
+          <div class="shortcut-row"><span>90° 화면 회전 / 전체화면</span><kbd>R</kbd> / <kbd>F</kbd></div>
+          <div class="shortcut-row"><span>5초 / 10초 이동</span><kbd>←</kbd><kbd>→</kbd> / <kbd>J</kbd><kbd>L</kbd></div>
+          <div class="shortcut-row"><span>이전 / 다음 트랙</span><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></div>
+          <div class="shortcut-row"><span>자막 싱크 -0.1s / +0.1s</span><kbd>G</kbd> / <kbd>H</kbd></div>
+          <div class="shortcut-row"><span>볼륨 조절 / 음소거</span><kbd>↑</kbd> <kbd>↓</kbd> / <kbd>M</kbd></div>
+          <div class="shortcut-row"><span>재생 속도 조절</span><kbd>[</kbd> / <kbd>]</kbd></div>
+          <div class="shortcut-row"><span>비주얼라이저 / 앰비라이트</span><kbd>V</kbd> / <kbd>A</kbd></div>
+          <div class="shortcut-row"><span>프레임 캡처 / 재생목록</span><kbd>S</kbd> / <kbd>Q</kbd></div>
+          <div class="shortcut-row"><span>파일 열기 / 프레임 이동</span><kbd>Ctrl+O</kbd> / <kbd>,</kbd><kbd>.</kbd></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offscreen Bridges -->
+    <canvas id="pip-bridge-canvas" width="640" height="360" class="offscreen-bridge" aria-hidden="true"></canvas>
+    <video id="pip-bridge-video" class="offscreen-bridge" muted playsinline aria-hidden="true"></video>
+    <video id="preview-video" class="offscreen-preview" muted playsinline preload="metadata" crossorigin="anonymous" aria-hidden="true"></video>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+  </div>
+
+  <script defer src="./js/bridge.js"></script>
+  <script defer src="./js/utils.js"></script>
+  <script defer src="./js/audio-engine.js"></script>
+  <script defer src="./js/visualizer.js"></script>
+  <script defer src="./js/demo-media.js"></script>
+  <script defer src="./js/pip-manager.js"></script>
+  <script defer src="./js/playlist.js"></script>
+  <script defer src="./js/app.js"></script>
+</body>
+</html>
