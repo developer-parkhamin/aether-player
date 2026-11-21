@@ -46,8 +46,8 @@ namespace AetherPlayer
         internal const int WMSZ_BOTTOMLEFT = 7;
         internal const int WMSZ_BOTTOMRIGHT = 8;
 
-        internal const int PipFrameExtraX = 10;
-        internal const int PipFrameExtraY = 10;
+        internal const int PipFrameExtraX = 0;
+        internal const int PipFrameExtraY = 0;
 
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x00000020;
@@ -443,8 +443,10 @@ namespace AetherPlayer
                 case "window:resize":
                     if (!_isFullscreenCustom && !_isMaximizedCustom && !_isGhostMode)
                     {
+                        int hit = GetInt(msg, "hit", HTBOTTOMRIGHT);
+                        if (hit < HTLEFT || hit > HTBOTTOMRIGHT) hit = HTBOTTOMRIGHT;
                         ReleaseCapture();
-                        SendMessage(Handle, WM_NCLBUTTONDOWN, new IntPtr(HTBOTTOMRIGHT), IntPtr.Zero);
+                        SendMessage(Handle, WM_NCLBUTTONDOWN, new IntPtr(hit), IntPtr.Zero);
                     }
                     break;
 
@@ -636,7 +638,7 @@ namespace AetherPlayer
 
             _isMaximizedCustom = false;
             _isPiPMode = true;
-            Padding = new Padding(4);
+            Padding = Padding.Empty;
             MinimumSize = new Size(120, 100);
 
             Screen currentScreen = Screen.FromHandle(Handle);
@@ -1747,7 +1749,7 @@ namespace AetherPlayer
 
             if (m.Msg == WM_MOVING)
             {
-                if (_isWindowMoveDrag && !_isPiPMode && !_isFullscreenCustom)
+                if (_isWindowMoveDrag && !_isPiPMode && !_isMaximizedCustom && !_isFullscreenCustom)
                 {
                     Point cur = Cursor.Position;
                     Screen scr = Screen.FromPoint(cur);
@@ -1786,7 +1788,7 @@ namespace AetherPlayer
                     _savedPiPBounds = Bounds;
                     _hasSavedPiPBounds = true;
                 }
-                else if (_isWindowMoveDrag && !_isFullscreenCustom)
+                else if (_isWindowMoveDrag && !_isMaximizedCustom && !_isFullscreenCustom)
                 {
                     Point cur = Cursor.Position;
                     Screen scr = Screen.FromPoint(cur);
@@ -1796,11 +1798,7 @@ namespace AetherPlayer
                         {
                             _normalBounds = ClampToWorkArea(_preDragNormalBounds, scr.WorkingArea);
                         }
-                        _savedMaximizedBeforeFs = false;
-                        _isMaximizedCustom = false;
-                        _isFullscreenCustom = true;
-                        Padding = Padding.Empty;
-                        Bounds = scr.Bounds;
+                        ApplyCustomMaximize();
                         PushWindowState();
                     }
                     else if (!_isMaximizedCustom)

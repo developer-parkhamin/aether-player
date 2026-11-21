@@ -226,7 +226,7 @@
             <TextBlock Text="AETHER" FontSize="19" FontWeight="Bold" Foreground="#FFFFFF" />
             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
               <Border Background="#122B3F" BorderBrush="#255D7D" BorderThickness="1" CornerRadius="6" Padding="7,2">
-                <TextBlock x:Name="TxtSidebarVersion" Text="v2.2.0 · x64" FontSize="10.5" FontWeight="SemiBold" Foreground="#38BDF8" />
+                <TextBlock x:Name="TxtSidebarVersion" Text="v2.3.0 · x64" FontSize="10.5" FontWeight="SemiBold" Foreground="#38BDF8" />
               </Border>
             </StackPanel>
           </StackPanel>
@@ -290,7 +290,7 @@
 
           <!-- PAGE 0: Welcome & System Check -->
           <StackPanel x:Name="PageWelcome" Visibility="Visible">
-            <TextBlock x:Name="TxtWelcomeTitle" Text="AETHER Player v2.2.0 설치" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
+            <TextBlock x:Name="TxtWelcomeTitle" Text="AETHER Player v2.3.0 설치" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
             <TextBlock x:Name="TxtWelcomeDesc" TextWrapping="Wrap" FontSize="13" LineHeight="20" Foreground="#94A3B8" Margin="0,8,0,18"
                        Text="MP4, WebM, MKV, MP3 및 다운로드 중인 .part 파일까지 재생하는 Windows 네이티브 PIP 미디어 스튜디오를 설치합니다." />
 
@@ -447,7 +447,7 @@
               <StackPanel>
                 <TextBlock Text="핵심 PIP 단축키 빠른 안내" FontSize="12" FontWeight="SemiBold" Foreground="#38BDF8" Margin="0,0,0,5" />
                 <TextBlock Text="• P : 데스크톱 플로팅 PIP 모드  |  Alt + Shift + P : 전역 PIP 토글" FontSize="11.5" Foreground="#CBD5E1" Margin="0,0,0,3" />
-                <TextBlock Text="• Alt + Shift + G : 고스트 모드 (PIP 클릭 통과)  |  상단 끝 드래그 : 전체화면" FontSize="11.5" Foreground="#CBD5E1" />
+                <TextBlock Text="• Alt + Shift + G : 고스트 모드 (PIP 클릭 통과)  |  상단 끝 드래그 : 창 최대화" FontSize="11.5" Foreground="#CBD5E1" />
               </StackPanel>
             </Border>
 

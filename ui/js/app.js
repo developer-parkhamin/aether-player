@@ -19,11 +19,22 @@
     const dropVeil = document.getElementById('global-drop-veil');
 
     const topHeader = document.getElementById('top-header');
+    const brandLogo = document.getElementById('brand-logo');
+    const welcomeBrandLogo = document.getElementById('welcome-brand-logo');
     const nowPlayingPill = document.getElementById('now-playing-pill');
     const nowPlayingBadge = document.getElementById('now-playing-badge');
     const nowPlayingTitle = document.getElementById('now-playing-title');
     const nowPlayingMeta = document.getElementById('now-playing-meta');
     const sleepTimerBadge = document.getElementById('sleep-timer-badge');
+    const btnHome = document.getElementById('btn-home');
+    const btnCloseMedia = document.getElementById('btn-close-media');
+    const btnStopHome = document.getElementById('btn-stop-home');
+    const btnWelcomeFolder = document.getElementById('btn-welcome-folder');
+    const btnWelcomeShortcuts = document.getElementById('btn-welcome-shortcuts');
+    const easterEggModal = document.getElementById('easter-egg-modal');
+    const easterEggCanvas = document.getElementById('easter-egg-canvas');
+    const btnEasterTheme = document.getElementById('btn-easter-theme');
+    const btnEasterClose = document.getElementById('btn-easter-close');
 
     const audioArtImg = document.getElementById('audio-art-img');
     const audioVinylFallback = document.getElementById('audio-vinyl-fallback');
@@ -283,6 +294,7 @@
     Aether.bridge.on('window:state', (state) => {
       pipManager.handleDesktopWindowState(state);
       syncPiPControlsUI();
+      applyVideoTransform();
     });
 
     Aether.bridge.on('window:topSnapHint', (msg) => {
@@ -382,7 +394,7 @@
       } else {
         updateStatusBadge.textContent = '최신 버전';
         updateStatusBadge.className = 'status-tag status-ok';
-        updateStatusDetail.textContent = '현재 최신 버전(v' + (res.currentVersion || '2.2.0') + ')을 사용 중입니다.';
+        updateStatusDetail.textContent = '현재 최신 버전(v' + (res.currentVersion || '2.3.0') + ')을 사용 중입니다.';
         btnUpdateInstall.classList.add('hidden');
         if (!res.silent) showToast('현재 최신 버전입니다', 'accent');
       }
@@ -564,6 +576,19 @@
     // =========================================================================
     // Playback & Track Lifecycle
     // =========================================================================
+    function closeMediaToHome() {
+      if (!activeTrack) return;
+      saveCurrentResumeState(true);
+      if (pipManager.isAnyPiPActive()) {
+        pipManager.exit();
+      }
+      playlist.activeIndex = -1;
+      loadTrack(null);
+      renderPlaylist();
+      renderRecentHistory();
+      showToast('재생을 종료하고 메인화면으로 돌아왔습니다', 'accent');
+    }
+
     function loadTrack(track) {
       saveCurrentResumeState(true);
 
@@ -572,6 +597,7 @@
       }
 
       activeTrack = track;
+      btnHome.classList.toggle('hidden', !track);
       pendingResumeApplied = false;
       clearAbLoop(true);
       subtitleOffset = 0;
@@ -1019,7 +1045,7 @@
         const scaleStr = needsScale ? (' scale(' + scale.toFixed(3) + ')') : '';
         mediaEl.style.transform = 'rotate(' + rotationDeg + 'deg)' + scaleStr + flipStr;
       }
-      mediaEl.style.objectFit = FIT_MODES[fitModeIdx].id;
+      mediaEl.style.objectFit = (pipManager.desktopPiPActive && fitModeIdx === 0) ? 'cover' : FIT_MODES[fitModeIdx].id;
       mediaEl.style.filter = 'brightness(' + brightness + '%) contrast(' + contrast + '%) saturate(' + saturation + '%)';
 
       document.getElementById('btn-vid-flip').classList.toggle('active', flipH);
@@ -1370,7 +1396,7 @@
     bindWindowMoveSurface(stageTopDragStrip, () => !pipManager.desktopPiPActive, true);
 
     topHeader.addEventListener('dblclick', (e) => {
-      if (allowHeaderDrag(e)) Aether.bridge.toggleMaximize();
+      if (allowHeaderDrag(e) && !e.target.closest('#brand-logo')) Aether.bridge.toggleMaximize();
     });
     stageTopDragStrip.addEventListener('dblclick', () => {
       if (!pipManager.desktopPiPActive) toggleFullscreen();
@@ -1381,6 +1407,15 @@
     document.getElementById('btn-win-close').addEventListener('click', () => Aether.bridge.close());
     btnPinTopmost.addEventListener('click', () => pipManager.toggleTopMost());
 
+    btnHome.addEventListener('click', closeMediaToHome);
+    btnCloseMedia.addEventListener('click', closeMediaToHome);
+    btnStopHome.addEventListener('click', closeMediaToHome);
+    btnWelcomeFolder.addEventListener('click', () => {
+      if (Aether.bridge.isDesktop) Aether.bridge.openFolder();
+      else showToast('폴더 열기는 데스크톱 앱에서 지원됩니다', 'warn');
+    });
+    btnWelcomeShortcuts.addEventListener('click', () => btnShortcuts.click());
+
     pipHudTop.addEventListener('mousedown', (e) => {
       if (e.button === 0 && !e.target.closest('button')) Aether.bridge.startDrag();
     });
@@ -1388,7 +1423,15 @@
     document.getElementById('pip-resize-grip').addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
       e.stopPropagation();
-      Aether.bridge.startResize();
+      Aether.bridge.startResize(17);
+    });
+
+    document.querySelectorAll('.pip-edge-grip').forEach((grip) => {
+      grip.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        Aether.bridge.startResize(Number(grip.dataset.hit) || 17);
+      });
     });
 
     document.getElementById('btn-pip-snap-tl').addEventListener('click', () => Aether.bridge.snapPiP('tl'));
@@ -1993,10 +2036,142 @@
       if (rotationDeg === 90 || rotationDeg === 270) applyVideoTransform();
     });
 
+    // =========================================================================
+    // Secret Easter Egg: AETHER Overdrive Warp (Logo 5x Click or Type "aether")
+    // =========================================================================
+    let eggClickCount = 0;
+    let eggClickTimer = 0;
+    let eggKeyBuf = '';
+    let eggRaf = 0;
+    let eggWarpBoost = 1;
+    let overdriveEnabled = Boolean(Aether.utils.storage.get('overdrive', false));
+
+    function syncOverdriveTheme() {
+      appRoot.dataset.overdrive = overdriveEnabled ? 'true' : 'false';
+      btnEasterTheme.textContent = overdriveEnabled ? '기본 오션 블루 테마로 복귀' : '네온 오버드라이브 테마 켜기';
+    }
+    syncOverdriveTheme();
+
+    function playEasterEggChime() {
+      try {
+        const AudioCtx = global.AudioContext || global.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          const t0 = ctx.currentTime + idx * 0.07;
+          gain.gain.setValueAtTime(0.0001, t0);
+          gain.gain.exponentialRampToValueAtTime(0.08, t0 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 0.6);
+        });
+        setTimeout(() => ctx.close().catch(function () {}), 1200);
+      } catch { }
+    }
+
+    function startEasterEggWarp() {
+      if (!easterEggCanvas) return;
+      cancelAnimationFrame(eggRaf);
+      const ctx = easterEggCanvas.getContext('2d');
+      const stars = [];
+      for (let i = 0; i < 160; i++) {
+        stars.push({
+          x: (Math.random() - 0.5) * 1600,
+          y: (Math.random() - 0.5) * 1000,
+          z: Math.random() * 900 + 80,
+          hue: i % 3 === 0 ? '#f472b6' : (i % 2 === 0 ? '#38bdf8' : '#a78bfa')
+        });
+      }
+
+      const tick = () => {
+        if (easterEggModal.classList.contains('hidden')) return;
+        const w = (easterEggCanvas.width = easterEggModal.clientWidth || 800);
+        const h = (easterEggCanvas.height = easterEggModal.clientHeight || 500);
+        const cx = w * 0.5;
+        const cy = h * 0.5;
+        ctx.fillStyle = 'rgba(4, 6, 12, 0.34)';
+        ctx.fillRect(0, 0, w, h);
+
+        eggWarpBoost = Math.max(1, eggWarpBoost * 0.96);
+        const speed = 9 * eggWarpBoost;
+        for (let i = 0; i < stars.length; i++) {
+          const s = stars[i];
+          const prevZ = s.z;
+          s.z -= speed;
+          if (s.z <= 12) {
+            s.x = (Math.random() - 0.5) * 1600;
+            s.y = (Math.random() - 0.5) * 1000;
+            s.z = 950;
+            continue;
+          }
+          const k1 = 260 / prevZ;
+          const k2 = 260 / s.z;
+          ctx.strokeStyle = s.hue;
+          ctx.lineWidth = Math.max(1, (1 - s.z / 950) * 3.2);
+          ctx.beginPath();
+          ctx.moveTo(cx + s.x * k1, cy + s.y * k1);
+          ctx.lineTo(cx + s.x * k2, cy + s.y * k2);
+          ctx.stroke();
+        }
+        eggRaf = requestAnimationFrame(tick);
+      };
+      tick();
+    }
+
+    function openEasterEgg() {
+      closeFloatingMenus();
+      easterEggModal.classList.remove('hidden');
+      eggWarpBoost = 4.2;
+      playEasterEggChime();
+      startEasterEggWarp();
+      showToast('✦ 이스터에그 발견: AETHER HYPER-STUDIO ✦', 'accent');
+    }
+
+    function closeEasterEgg() {
+      easterEggModal.classList.add('hidden');
+      cancelAnimationFrame(eggRaf);
+    }
+
+    function registerLogoTap() {
+      eggClickCount += 1;
+      clearTimeout(eggClickTimer);
+      eggClickTimer = setTimeout(() => { eggClickCount = 0; }, 2400);
+      if (eggClickCount >= 5) {
+        eggClickCount = 0;
+        openEasterEgg();
+      }
+    }
+
+    if (brandLogo) brandLogo.addEventListener('click', registerLogoTap);
+    if (welcomeBrandLogo) welcomeBrandLogo.addEventListener('click', registerLogoTap);
+    easterEggCanvas.addEventListener('click', () => {
+      eggWarpBoost = 5.5;
+      playEasterEggChime();
+    });
+    btnEasterTheme.addEventListener('click', () => {
+      overdriveEnabled = !overdriveEnabled;
+      Aether.utils.storage.set('overdrive', overdriveEnabled);
+      syncOverdriveTheme();
+      eggWarpBoost = 3.5;
+      showToast(overdriveEnabled ? '네온 오버드라이브 테마 활성화!' : '오션 블루 테마 복원됨', 'accent');
+    });
+    btnEasterClose.addEventListener('click', closeEasterEgg);
+
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       const isInput = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT');
       if (e.key === 'Escape') {
+        if (!easterEggModal.classList.contains('hidden')) {
+          closeEasterEgg();
+          return;
+        }
         if (!shortcutsModal.classList.contains('hidden')) {
           shortcutsModal.classList.add('hidden');
           btnShortcuts.setAttribute('aria-expanded', 'false');
@@ -2011,6 +2186,21 @@
       }
 
       if (isInput) return;
+
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key && e.key.length === 1) {
+        eggKeyBuf = (eggKeyBuf + e.key.toLowerCase()).slice(-6);
+        if (eggKeyBuf === 'aether') {
+          eggKeyBuf = '';
+          openEasterEgg();
+          return;
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        closeMediaToHome();
+        return;
+      }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
         e.preventDefault();

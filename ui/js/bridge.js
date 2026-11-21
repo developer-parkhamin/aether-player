@@ -72,7 +72,7 @@
     send: send,
     ready: function () { return send('ui:ready'); },
     startDrag: function () { return send('window:drag'); },
-    startResize: function () { return send('window:resize'); },
+    startResize: function (hit) { return send('window:resize', { hit: Number(hit) || 17 }); },
     minimize: function () { return send('window:minimize'); },
     toggleMaximize: function () { return send('window:toggleMaximize'); },
     toggleFullscreen: function () { return send('window:toggleFullscreen'); },

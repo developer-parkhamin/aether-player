@@ -214,6 +214,8 @@ namespace AetherPlayer
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string uiIndex = Path.Combine(baseDir, "ui", "index.html");
                 if (!File.Exists(uiIndex)) throw new FileNotFoundException("Missing ui/index.html", uiIndex);
+                string logoAsset = Path.Combine(baseDir, "ui", "assets", "logo.png");
+                if (!File.Exists(logoAsset)) throw new FileNotFoundException("Missing ui/assets/logo.png", logoAsset);
                 report.AppendLine("UiEntry=" + uiIndex);
 
                 using (MediaServer server = new MediaServer())

@@ -21,7 +21,8 @@
        data-maximized="false"
        data-fullscreen="false"
        data-ambilight="true"
-       data-playlist-open="false">
+       data-playlist-open="false"
+       data-overdrive="false">
 
     <!-- Ambient Atmospheric Backdrop -->
     <div id="ambient-backdrop" aria-hidden="true">
@@ -44,18 +45,19 @@
     <!-- Custom Frameless Desktop Titlebar -->
     <header id="top-header" class="desktop-titlebar glass-bar">
       <div id="titlebar-drag-zone" class="titlebar-drag-zone">
-        <div id="brand-logo" title="AETHER Desktop Studio v2.2">
+        <div id="brand-logo" title="AETHER Studio v2.3 (로고 5회 클릭: 이스터에그)">
           <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+            <img src="./assets/logo.png" class="brand-logo-img" alt="AETHER" />
           </span>
           <span class="brand-name">AETHER</span>
-          <span class="brand-tag">DESKTOP</span>
+          <span class="brand-tag">PRO</span>
         </div>
 
         <div id="now-playing-pill" class="now-playing-pill hidden">
           <span id="now-playing-badge" class="format-badge">MP4</span>
           <span id="now-playing-title" class="now-playing-title">트랙 없음</span>
           <span id="now-playing-meta" class="now-playing-meta mono"></span>
+          <button id="btn-close-media" class="now-playing-close" type="button" title="재생 종료 후 메인화면으로 (Ctrl+W)">✕</button>
         </div>
 
         <div id="sleep-timer-badge" class="sleep-timer-badge hidden mono" title="취침 타이머 작동 중"></div>
@@ -65,6 +67,11 @@
         <input id="file-input" type="file" multiple accept=".mp4,.webm,.mkv,.mp3,.mp4.part,.webm.part,.mkv.part,.mp3.part,.part,.m4v,.mov,.wav,.ogg,.flac,.m4a,.srt,.vtt,.lrc,video/*,audio/*" hidden />
         <input id="subtitle-input" type="file" accept=".srt,.vtt" hidden />
         <input id="lyrics-input" type="file" accept=".lrc" hidden />
+
+        <button id="btn-home" class="btn-pill hidden" type="button" title="재생 종료 및 메인화면으로 이동 (Ctrl+W)">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          <span class="btn-label-desktop">메인화면</span>
+        </button>
 
         <button id="btn-open-files" class="btn-pill btn-primary-subtle" type="button" title="파일 열기 (Ctrl+O)">
           <svg class="icon" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -109,8 +116,8 @@
       </div>
     </header>
 
-    <!-- Top Edge Fullscreen Snap Hint -->
-    <div id="top-snap-hint" class="top-snap-hint hidden" aria-hidden="true">놓으면 전체화면으로 전환됩니다</div>
+    <!-- Top Edge Window Maximize Snap Hint -->
+    <div id="top-snap-hint" class="top-snap-hint hidden" aria-hidden="true">놓으면 창이 최대화됩니다</div>
 
     <!-- Non-intrusive Auto-Update Notification Banner -->
     <div id="update-banner" class="update-banner hidden" role="status" aria-live="polite">
@@ -177,6 +184,16 @@
           <!-- Interactive Stage Surface -->
           <div id="stage-click-zone" aria-hidden="true"></div>
           <div id="stage-top-drag-strip" class="stage-top-drag-strip" aria-hidden="true"></div>
+
+          <!-- 8-Way PIP Edge Resize Strips -->
+          <div class="pip-edge-grip pip-edge-n" data-hit="12" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-s" data-hit="15" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-w" data-hit="10" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-e" data-hit="11" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-nw" data-hit="13" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-ne" data-hit="14" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-sw" data-hit="16" aria-hidden="true"></div>
+          <div class="pip-edge-grip pip-edge-se" data-hit="17" aria-hidden="true"></div>
 
           <!-- Ghost Mode Indicator Banner -->
           <div id="pip-ghost-banner" class="pip-ghost-banner hidden">
@@ -268,36 +285,48 @@
             <div id="pip-resize-grip" class="pip-resize-grip" title="크기 조절" aria-hidden="true"></div>
           </div>
 
-          <!-- Empty / Welcome Screen -->
+          <!-- Empty / Welcome Dashboard Screen -->
           <div id="welcome-screen" class="welcome-screen">
             <div class="welcome-card glass-panel">
               <div class="welcome-glow" aria-hidden="true"></div>
-              <div class="welcome-eyebrow">
-                <span class="pulse-dot"></span>
-                <span>WINDOWS NATIVE CINEMA &amp; PIP PLAYER v2.2</span>
-              </div>
-              <h1 class="welcome-title">AETHER 데스크톱 미디어 스튜디오</h1>
-              <p class="welcome-desc">
-                MP4 · WebM · MKV · MP3 · 다운로드 중 <code>.part</code> 파일까지 즉시 재생하고,<br />
-                고스트 모드(클릭 통과)와 전역 단축키(<code>Alt+Shift+P</code>)를 지원하는 네이티브 PIP 플레이어
-              </p>
 
-              <div class="format-chips" aria-label="지원 포맷">
-                <span class="format-chip">MP4 / .part</span>
-                <span class="format-chip">WEBM / .part</span>
+              <div class="welcome-hero-row">
+                <div class="welcome-brand-block">
+                  <img id="welcome-brand-logo" src="./assets/logo.png" class="welcome-logo-img" alt="AETHER Logo" title="로고 5회 클릭: 이스터에그" />
+                  <div class="welcome-title-wrap">
+                    <div class="welcome-eyebrow">
+                      <span class="pulse-dot"></span>
+                      <span>AETHER MEDIA STUDIO v2.3.0 PRO</span>
+                    </div>
+                    <h1 class="welcome-title">AETHER 데스크톱 시네마 &amp; 오디오 스튜디오</h1>
+                    <p class="welcome-desc">
+                      영상 비율 자동 고정 PIP, 고스트 클릭 통과(<code>Alt+Shift+G</code>), 다운로드 중 <code>.part</code> 실시간 재생 지원
+                    </p>
+                  </div>
+                </div>
+
+                <div class="welcome-cta-group">
+                  <button id="btn-welcome-open" class="btn-cta btn-cta-primary" type="button">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>미디어 열기</span>
+                  </button>
+                  <button id="btn-welcome-folder" class="btn-cta btn-cta-secondary" type="button">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    <span>폴더 열기</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="format-chips" aria-label="지원 포맷 및 엔진">
+                <span class="format-chip">MP4</span>
+                <span class="format-chip">WEBM</span>
                 <span class="format-chip">MKV</span>
-                <span class="format-chip">MP3 + LRC</span>
-                <span class="format-chip format-chip-sub">+ SRT / VTT</span>
+                <span class="format-chip">MP3</span>
+                <span class="format-chip format-chip-sub">.PART 실시간 스트리밍</span>
+                <span class="format-chip">SRT / VTT</span>
+                <span class="format-chip">LRC 가사</span>
+                <span class="format-chip format-chip-sub">5-Band EQ · Ambilight</span>
               </div>
-
-              <div class="welcome-cta-row">
-                <button id="btn-welcome-open" class="btn-cta btn-cta-primary" type="button">
-                  <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>파일 열기 또는 창으로 드래그</span>
-                </button>
-              </div>
-
-              <div class="welcome-demo-divider"><span>또는 파일 없이 바로 테스트</span></div>
 
               <div class="welcome-demo-row">
                 <button id="btn-demo-video" class="btn-demo" type="button">
@@ -305,8 +334,8 @@
                     <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none"/></svg>
                   </span>
                   <span class="demo-btn-text">
-                    <strong>데모 영상 재생</strong>
-                    <small>시네마 비주얼 + 데스크톱 PIP 즉시 테스트</small>
+                    <strong>시네마 데모 영상</strong>
+                    <small>60fps 플로팅 PIP &amp; 비율 리사이징</small>
                   </span>
                 </button>
                 <button id="btn-demo-audio" class="btn-demo" type="button">
@@ -314,8 +343,17 @@
                     <svg class="icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                   </span>
                   <span class="demo-btn-text">
-                    <strong>데모 음악 재생</strong>
-                    <small>MP3 스튜디오 비주얼라이저 + 오디오 PIP</small>
+                    <strong>스튜디오 데모 오디오</strong>
+                    <small>비주얼라이저 &amp; 5-Band EQ 테스트</small>
+                  </span>
+                </button>
+                <button id="btn-welcome-shortcuts" class="btn-demo" type="button">
+                  <span class="demo-icon-box demo-icon-guide">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+                  </span>
+                  <span class="demo-btn-text">
+                    <strong>PIP &amp; 단축키 가이드</strong>
+                    <small>P(PIP) · Alt+Shift+G(고스트) · Ctrl+W(홈)</small>
                   </span>
                 </button>
               </div>
@@ -394,6 +432,10 @@
 
                 <button id="btn-next" class="dock-btn" type="button" title="다음 트랙 (Shift+→)">
                   <svg class="icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor" stroke="none"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+
+                <button id="btn-stop-home" class="dock-btn" type="button" title="재생 정지 후 메인화면으로 (Ctrl+W)">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/></svg>
                 </button>
 
                 <button id="btn-seek-back" class="dock-btn dock-btn-skip" type="button" title="10초 뒤로 (J)">
@@ -732,7 +774,7 @@
           <div class="update-card-head">
             <div>
               <strong>자동 업데이트</strong>
-              <span id="app-version-badge" class="status-tag status-ok mono">v2.2.0</span>
+              <span id="app-version-badge" class="status-tag status-ok mono">v2.3.0</span>
             </div>
             <span id="update-status-badge" class="status-tag">대기 중</span>
           </div>
@@ -850,7 +892,21 @@
           <div class="shortcut-row"><span>재생 속도 조절</span><kbd>[</kbd> / <kbd>]</kbd></div>
           <div class="shortcut-row"><span>비주얼라이저 / 앰비라이트</span><kbd>V</kbd> / <kbd>A</kbd></div>
           <div class="shortcut-row"><span>프레임 캡처 / 재생목록</span><kbd>S</kbd> / <kbd>Q</kbd></div>
-          <div class="shortcut-row"><span>파일 열기 / 프레임 이동</span><kbd>Ctrl+O</kbd> / <kbd>,</kbd><kbd>.</kbd></div>
+          <div class="shortcut-row"><span>파일 열기 / 메인화면</span><kbd>Ctrl+O</kbd> / <kbd>Ctrl+W</kbd></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Easter Egg Modal: AETHER Overdrive -->
+    <div id="easter-egg-modal" class="easter-egg-modal hidden" role="dialog" aria-modal="true" aria-label="AETHER 시크릿 이스터에그">
+      <canvas id="easter-egg-canvas"></canvas>
+      <div class="easter-egg-card glass-panel">
+        <div class="easter-egg-badge mono">✦ FIFTH ELEMENT · OVERDRIVE ✦</div>
+        <h2>AETHER HYPER-STUDIO</h2>
+        <p>빛과 대기(Aether)를 가로지르는 하이퍼 스페이스를 발견하셨습니다.<br />배경을 클릭하면 워프 가속이 걸리며, 네온 오버드라이브 테마를 전환할 수 있습니다.</p>
+        <div class="easter-egg-actions">
+          <button id="btn-easter-theme" class="btn-cta btn-cta-primary" type="button">네온 오버드라이브 테마 전환</button>
+          <button id="btn-easter-close" class="btn-cta btn-cta-secondary" type="button">닫기 (Esc)</button>
         </div>
       </div>
     </div>

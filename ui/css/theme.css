@@ -47,6 +47,13 @@
   --transition-med: 260ms var(--ease-out-expo);
 }
 
+#app-root[data-overdrive="true"] {
+  --accent-cyan: #f472b6;
+  --accent-ice: #38bdf8;
+  --accent-gradient: linear-gradient(135deg, #f472b6 0%, #a855f7 50%, #22d3ee 100%);
+  --accent-glow: rgba(244, 114, 182, 0.48);
+}
+
 *,
 *::before,
 *::after {
@@ -438,4 +445,72 @@ input[type="range"]:hover::-webkit-slider-thumb {
   margin: 0;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+/* Easter Egg Overdrive Modal */
+.easter-egg-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 6, 12, 0.84);
+  backdrop-filter: blur(14px);
+}
+
+#easter-egg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.easter-egg-card {
+  position: relative;
+  z-index: 2;
+  width: min(460px, 100%);
+  padding: 28px 26px 24px;
+  border-radius: 24px;
+  text-align: center;
+  border: 1px solid rgba(244, 114, 182, 0.42);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 48px rgba(168, 85, 247, 0.25);
+}
+
+.easter-egg-badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fbcfe8;
+  background: rgba(244, 114, 182, 0.16);
+  border: 1px solid rgba(244, 114, 182, 0.42);
+  margin-bottom: 12px;
+}
+
+.easter-egg-card h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffffff 0%, #f472b6 55%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.easter-egg-card p {
+  margin: 0 0 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.easter-egg-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }

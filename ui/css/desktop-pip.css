@@ -31,20 +31,40 @@
 }
 
 .brand-mark {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: var(--accent-gradient);
-  color: #041019;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.42);
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.34);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.28);
 }
 
-.brand-mark svg {
-  width: 12px;
-  height: 12px;
-  transform: translateX(1px);
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.now-playing-close {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.now-playing-close:hover {
+  background: rgba(251, 113, 133, 0.24);
+  color: #fda4af;
 }
 
 .brand-name {
@@ -141,11 +161,19 @@
    DESKTOP PIP MORPH MODE
    ========================================================================== */
 #app-root[data-desktop-pip="true"] {
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  border: none;
+}
+
+#app-root[data-desktop-pip="true"] .stage-media-shell {
+  background: #000000;
+}
+
+#app-root[data-desktop-pip="true"] #media-element {
+  object-fit: cover;
 }
 
 #app-root[data-desktop-pip="true"][data-ghost="true"] {
-  border: 1.5px dashed rgba(251, 191, 36, 0.72);
+  box-shadow: inset 0 0 0 1.5px rgba(251, 191, 36, 0.72);
 }
 
 #app-root[data-desktop-pip="true"] #top-header {
@@ -545,6 +573,26 @@
   background: linear-gradient(135deg, transparent 52%, rgba(56, 189, 248, 0.55) 52%);
   border-bottom-right-radius: 4px;
 }
+
+/* 8-Way Invisible Native Resize Edges in Desktop PIP */
+.pip-edge-grip {
+  position: absolute;
+  z-index: 25;
+  display: none;
+}
+
+#app-root[data-desktop-pip="true"]:not([data-ghost="true"]) .pip-edge-grip {
+  display: block;
+}
+
+.pip-edge-n { top: 0; left: 14px; right: 14px; height: 6px; cursor: ns-resize; }
+.pip-edge-s { bottom: 0; left: 14px; right: 14px; height: 6px; cursor: ns-resize; }
+.pip-edge-w { left: 0; top: 14px; bottom: 14px; width: 6px; cursor: ew-resize; }
+.pip-edge-e { right: 0; top: 14px; bottom: 14px; width: 6px; cursor: ew-resize; }
+.pip-edge-nw { left: 0; top: 0; width: 14px; height: 14px; cursor: nwse-resize; }
+.pip-edge-ne { right: 0; top: 0; width: 14px; height: 14px; cursor: nesw-resize; }
+.pip-edge-sw { left: 0; bottom: 0; width: 14px; height: 14px; cursor: nesw-resize; }
+.pip-edge-se { right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; }
 
 @media (max-width: 430px) {
   .pip-mini-group,
