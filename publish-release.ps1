@@ -25,8 +25,12 @@ if (-not $gh) {
     throw "GitHub CLI(gh)를 찾을 수 없습니다. 'winget install --id GitHub.cli -e'로 설치한 뒤 다시 실행하세요."
 }
 
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 & $gh auth status 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) {
+$authOk = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = $prevEap
+if (-not $authOk) {
     throw "GitHub 로그인이 필요합니다. PowerShell에서 'gh auth login -h github.com -p https -w'를 먼저 실행해 주세요."
 }
 
@@ -104,8 +108,13 @@ if ([string]::IsNullOrWhiteSpace($Notes)) {
 $ghArgs = @("release", "create", $tag, $setupExe, $latestJson, "--title", "AETHER Player $tag", "--notes", $Notes)
 if ($Draft) { $ghArgs += "--draft" }
 
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 & $gh release view $tag 2>&1 | Out-Null
-if ($LASTEXITCODE -eq 0) {
+$releaseExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = $prevEap
+
+if ($releaseExists) {
     Write-Host "[AETHER] Release $tag already exists; uploading/replacing assets ..."
     & $gh release upload $tag $setupExe $latestJson --clobber
     if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
