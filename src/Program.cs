@@ -33,9 +33,12 @@ namespace AetherPlayer
 
             string selfTestOutPath = null;
             string updaterTestOutPath = null;
+            string ytTestOutPath = null;
+            string ytTestUrl = "https://www.youtube.com/watch?v=jNQXAC9IVRw";
             string setupExePath = null;
             bool runSelfTest = false;
             bool runUpdaterTest = false;
+            bool runYtTest = false;
             bool devMode = false;
             List<string> initialFiles = new List<string>();
 
@@ -60,6 +63,20 @@ namespace AetherPlayer
                         runUpdaterTest = true;
                         updaterTestOutPath = arg.Substring("--self-test-updater=".Length).Trim('"');
                     }
+                    else if (string.Equals(arg, "--self-test-yt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        runYtTest = true;
+                    }
+                    else if (arg.StartsWith("--self-test-yt=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        runYtTest = true;
+                        ytTestOutPath = arg.Substring("--self-test-yt=".Length).Trim('"');
+                    }
+                    else if (arg.StartsWith("--yt-url=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string u = arg.Substring("--yt-url=".Length).Trim('"');
+                        if (!string.IsNullOrWhiteSpace(u)) ytTestUrl = u;
+                    }
                     else if (arg.StartsWith("--setup-exe=", StringComparison.OrdinalIgnoreCase))
                     {
                         setupExePath = arg.Substring("--setup-exe=".Length).Trim('"');
@@ -83,6 +100,11 @@ namespace AetherPlayer
             if (runUpdaterTest)
             {
                 return RunUpdaterSelfTest(updaterTestOutPath, setupExePath);
+            }
+
+            if (runYtTest)
+            {
+                return RunYoutubeE2ESelfTest(ytTestOutPath, ytTestUrl);
             }
 
             bool createdNew;
@@ -273,6 +295,43 @@ namespace AetherPlayer
                 }
                 report.AppendLine("AppConfigCheck=PASS");
 
+                if (YoutubeDownloader.NormalizeYoutubeUrl("https://www.youtube.com/watch?v=jNQXAC9IVRw") == null)
+                    throw new InvalidOperationException("NormalizeYoutubeUrl failed watch");
+                if (YoutubeDownloader.NormalizeYoutubeUrl("youtube.com/shorts/abc123XYZ") != "https://youtube.com/shorts/abc123XYZ")
+                    throw new InvalidOperationException("NormalizeYoutubeUrl failed shorts");
+                if (YoutubeDownloader.NormalizeYoutubeUrl("youtu.be/jNQXAC9IVRw") != "https://youtu.be/jNQXAC9IVRw")
+                    throw new InvalidOperationException("NormalizeYoutubeUrl failed youtu.be");
+                if (YoutubeDownloader.NormalizeYoutubeUrl("https://music.youtube.com/watch?v=jNQXAC9IVRw") == null)
+                    throw new InvalidOperationException("NormalizeYoutubeUrl failed music");
+                if (YoutubeDownloader.NormalizeYoutubeUrl("https://example.com/watch?v=123") != null)
+                    throw new InvalidOperationException("NormalizeYoutubeUrl allowed non-YouTube host");
+                if (YoutubeDownloader.NormalizeYoutubeUrl("https://www.youtube.com/") != null)
+                    throw new InvalidOperationException("NormalizeYoutubeUrl allowed bare homepage");
+
+                List<Dictionary<string, object>> synLand = new List<Dictionary<string, object>>
+                {
+                    new Dictionary<string, object> { { "ext", "m4a" }, { "vcodec", "none" }, { "acodec", "mp4a.40.2" }, { "filesize", 1500000L } },
+                    new Dictionary<string, object> { { "ext", "mhtml" }, { "vcodec", "none" }, { "height", 90 } },
+                    new Dictionary<string, object> { { "ext", "mp4" }, { "vcodec", "avc1.640028" }, { "acodec", "none" }, { "width", 1920 }, { "height", 1080 }, { "fps", 60.0 }, { "filesize", 24000000L } },
+                    new Dictionary<string, object> { { "ext", "mp4" }, { "vcodec", "avc1.4d401f" }, { "acodec", "none" }, { "width", 1280 }, { "height", 720 }, { "fps", 30.0 }, { "filesize", 10000000L } }
+                };
+                List<YoutubeResolutionOption> landOpts = YoutubeDownloader.BuildResolutionOptions(synLand, 60.0);
+                if (landOpts.Count != 2 || landOpts[0].ShortSide != 1080 || landOpts[0].Height != 1080 || landOpts[0].IsPortrait || landOpts[0].EstimatedBytes != 25500000L)
+                {
+                    throw new InvalidOperationException("BuildResolutionOptions landscape failed");
+                }
+
+                List<Dictionary<string, object>> synPort = new List<Dictionary<string, object>>
+                {
+                    new Dictionary<string, object> { { "ext", "mp4" }, { "vcodec", "avc1" }, { "acodec", "none" }, { "width", 1080 }, { "height", 1920 }, { "fps", 30.0 }, { "filesize", 8000000L } }
+                };
+                List<YoutubeResolutionOption> portOpts = YoutubeDownloader.BuildResolutionOptions(synPort, 30.0);
+                if (portOpts.Count != 1 || portOpts[0].ShortSide != 1080 || portOpts[0].Height != 1920 || !portOpts[0].IsPortrait || portOpts[0].Label.IndexOf("세로", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("BuildResolutionOptions portrait failed");
+                }
+                report.AppendLine("YoutubeLogic=PASS");
+
                 report.AppendLine("PayloadMatch=true");
                 report.AppendLine("SELF_TEST=PASS");
             }
@@ -419,6 +478,110 @@ namespace AetherPlayer
                 if (Directory.Exists(tempUpgradeDir))
                 {
                     try { Directory.Delete(tempUpgradeDir, true); } catch { }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(outPath))
+            {
+                try { File.WriteAllText(outPath, report.ToString(), Encoding.UTF8); } catch { }
+            }
+            return ok ? 0 : 1;
+        }
+
+        private static int RunYoutubeE2ESelfTest(string outPath, string url)
+        {
+            StringBuilder report = new StringBuilder();
+            bool ok = true;
+            string tempDir = Path.Combine(Path.GetTempPath(), "aether_yt_e2e_" + Guid.NewGuid().ToString("N"));
+
+            try
+            {
+                Directory.CreateDirectory(tempDir);
+                using (CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromMinutes(4)))
+                {
+                    YoutubeVideoInfo info = YoutubeDownloader.FetchVideoInfoAsync(url, null, cts.Token).GetAwaiter().GetResult();
+                    if (info == null || string.IsNullOrWhiteSpace(info.Title) || info.Resolutions == null || info.Resolutions.Count == 0)
+                    {
+                        throw new InvalidOperationException("FetchVideoInfoAsync returned empty info/resolutions");
+                    }
+                    report.AppendLine("YoutubeFetch=PASS|Title=" + info.Title + "|ResCount=" + info.Resolutions.Count);
+
+                    YoutubeResolutionOption chosen = info.Resolutions[info.Resolutions.Count - 1];
+                    for (int i = 0; i < info.Resolutions.Count; i++)
+                    {
+                        if (info.Resolutions[i].ShortSide <= 360)
+                        {
+                            chosen = info.Resolutions[i];
+                            break;
+                        }
+                    }
+
+                    YoutubeDownloadRequest mp4Req = new YoutubeDownloadRequest();
+                    mp4Req.Url = url;
+                    mp4Req.Format = "mp4";
+                    mp4Req.MaxHeight = chosen.Height;
+                    mp4Req.ShortSide = chosen.ShortSide;
+                    mp4Req.SaveDir = tempDir;
+                    mp4Req.AutoPlay = false;
+
+                    YoutubeDownloadResult mp4Res = YoutubeDownloader.DownloadAsync(mp4Req, null, cts.Token).GetAwaiter().GetResult();
+                    if (mp4Res == null || !File.Exists(mp4Res.FilePath) || mp4Res.FileSize < 4096)
+                    {
+                        throw new InvalidOperationException("MP4 download output missing or too small");
+                    }
+                    byte[] mp4Hdr = new byte[32];
+                    using (FileStream fs = File.OpenRead(mp4Res.FilePath))
+                    {
+                        fs.Read(mp4Hdr, 0, mp4Hdr.Length);
+                    }
+                    string hdrAscii = Encoding.ASCII.GetString(mp4Hdr);
+                    if (hdrAscii.IndexOf("ftyp", StringComparison.Ordinal) < 0)
+                    {
+                        throw new InvalidOperationException("Downloaded MP4 header lacks ftyp box");
+                    }
+                    report.AppendLine("YoutubeMp4=PASS|Res=" + chosen.ShortSide + "p|Bytes=" + mp4Res.FileSize);
+
+                    YoutubeDownloadRequest mp3Req = new YoutubeDownloadRequest();
+                    mp3Req.Url = url;
+                    mp3Req.Format = "mp3";
+                    mp3Req.AudioBitrate = 128;
+                    mp3Req.SaveDir = tempDir;
+                    mp3Req.AutoPlay = false;
+
+                    YoutubeDownloadResult mp3Res = YoutubeDownloader.DownloadAsync(mp3Req, null, cts.Token).GetAwaiter().GetResult();
+                    if (mp3Res == null || !File.Exists(mp3Res.FilePath) || mp3Res.FileSize < 2048)
+                    {
+                        throw new InvalidOperationException("MP3 download output missing or too small");
+                    }
+                    byte[] mp3Hdr = new byte[4];
+                    using (FileStream fs = File.OpenRead(mp3Res.FilePath))
+                    {
+                        fs.Read(mp3Hdr, 0, mp3Hdr.Length);
+                    }
+                    bool hasId3 = mp3Hdr[0] == (byte)'I' && mp3Hdr[1] == (byte)'D' && mp3Hdr[2] == (byte)'3';
+                    bool hasMpegSync = mp3Hdr[0] == 0xFF && (mp3Hdr[1] & 0xE0) == 0xE0;
+                    if (!hasId3 && !hasMpegSync)
+                    {
+                        throw new InvalidOperationException("Downloaded MP3 lacks ID3/MPEG frame header");
+                    }
+                    report.AppendLine("YoutubeMp3=PASS|Bytes=" + mp3Res.FileSize);
+
+                    YoutubeEngineStatus st = YoutubeDownloader.GetEngineStatus();
+                    report.AppendLine("EngineReady=" + (st.HasYtdlp && st.HasQuickJs && st.HasFfmpeg));
+                    report.AppendLine("YT_E2E_TEST=PASS");
+                }
+            }
+            catch (Exception ex)
+            {
+                ok = false;
+                report.AppendLine("YT_E2E_TEST=FAIL");
+                report.AppendLine("ERROR=" + ex.ToString());
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    try { Directory.Delete(tempDir, true); } catch { }
                 }
             }
 

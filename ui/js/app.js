@@ -2001,6 +2001,17 @@
       playerStage.classList.remove('dock-pinned');
     }
 
+    const ytDownloader = Aether.createYoutubeDownloader({
+      bridge: Aether.bridge,
+      utils: Aether.utils,
+      showToast: showToast,
+      onBeforeOpenModal: () => {
+        closeFloatingMenus();
+        shortcutsModal.classList.add('hidden');
+        btnShortcuts.setAttribute('aria-expanded', 'false');
+      }
+    });
+
     document.addEventListener('click', (e) => {
       if (!e.target.closest('#pip-popover, #btn-pip-menu-toggle, #eq-popover, #btn-eq, #tools-popover, #btn-tools, .speed-control-wrap')) {
         closeFloatingMenus();
@@ -2168,6 +2179,10 @@
     document.addEventListener('keydown', (e) => {
       const isInput = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT');
       if (e.key === 'Escape') {
+        if (ytDownloader.isOpen()) {
+          ytDownloader.close();
+          return;
+        }
         if (!easterEggModal.classList.contains('hidden')) {
           closeEasterEgg();
           return;
@@ -2185,7 +2200,18 @@
         if (pipManager.desktopPiPActive) { pipManager.exit(); return; }
       }
 
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        ytDownloader.open();
+        return;
+      }
+
       if (isInput) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        ytDownloader.requestGlobalClipboardCheck();
+        return;
+      }
 
       if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key && e.key.length === 1) {
         eggKeyBuf = (eggKeyBuf + e.key.toLowerCase()).slice(-6);

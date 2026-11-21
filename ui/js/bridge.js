@@ -106,6 +106,16 @@
     getUpdateConfig: function () { return send('update:getConfig'); },
     saveUpdateConfig: function (cfg) { return send('update:saveConfig', cfg || {}); },
     checkUpdates: function () { return send('update:check'); },
-    downloadAndInstallUpdate: function () { return send('update:downloadAndInstall'); }
+    downloadAndInstallUpdate: function () { return send('update:downloadAndInstall'); },
+    ytGetState: function () { return send('yt:getState'); },
+    ytReadClipboard: function (reason) { return send('yt:readClipboard', { reason: reason || 'paste' }); },
+    ytChooseFolder: function () { return send('yt:chooseFolder'); },
+    ytOpenFolder: function (path) { return send('yt:openFolder', { path: String(path || '') }); },
+    ytRevealFile: function (path) { return send('yt:revealFile', { path: String(path || '') }); },
+    ytSaveSettings: function (settings) { return send('yt:saveSettings', settings || {}); },
+    ytUpdateEngine: function () { return send('yt:updateEngine'); },
+    ytFetchInfo: function (url) { return send('yt:fetchInfo', { url: String(url || '') }); },
+    ytDownload: function (opts) { return send('yt:download', opts || {}); },
+    ytCancel: function () { return send('yt:cancel'); }
   };
 })(window);

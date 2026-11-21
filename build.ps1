@@ -25,6 +25,7 @@ $srcFiles = @(
     (Join-Path $root "src\MediaServer.cs"),
     (Join-Path $root "src\FileAssociation.cs"),
     (Join-Path $root "src\AutoUpdater.cs"),
+    (Join-Path $root "src\YoutubeDownloader.cs"),
     (Join-Path $root "src\MainForm.cs")
 )
 
@@ -41,6 +42,8 @@ $argsList = @(
     "/r:System.Drawing.dll",
     "/r:System.Windows.Forms.dll",
     "/r:System.Web.Extensions.dll",
+    "/r:System.IO.Compression.dll",
+    "/r:System.IO.Compression.FileSystem.dll",
     "/r:$coreDll",
     "/r:$winformsDll"
 ) + $srcFiles

@@ -120,6 +120,9 @@ namespace AetherPlayer
         private UpdateConfig _updateConfig;
         private UpdateCheckResult _latestUpdate;
         private bool _isDownloadingUpdate;
+        private CancellationTokenSource _ytFetchCts;
+        private CancellationTokenSource _ytDownloadCts;
+        private bool _ytDownloading;
 
         [DllImport("user32.dll")]
         private static extern bool ReleaseCapture();
@@ -428,6 +431,7 @@ namespace AetherPlayer
                     PushWindowState();
                     PushAssocState();
                     PushUpdateConfig();
+                    PushYoutubeState();
                     if (_initialFiles.Count > 0)
                     {
                         SendRegisteredFilesToUi(_initialFiles);
@@ -603,6 +607,46 @@ namespace AetherPlayer
 
                 case "update:downloadAndInstall":
                     Task ignoredDl = RunDownloadAndInstallUpdateAsync();
+                    break;
+
+                case "yt:getState":
+                    PushYoutubeState();
+                    break;
+
+                case "yt:readClipboard":
+                    HandleYoutubeReadClipboard(GetString(msg, "reason", "paste"));
+                    break;
+
+                case "yt:chooseFolder":
+                    ChooseYoutubeSaveFolder();
+                    break;
+
+                case "yt:openFolder":
+                    OpenYoutubeSaveFolder(GetString(msg, "path", string.Empty));
+                    break;
+
+                case "yt:revealFile":
+                    RevealFileInExplorer(GetString(msg, "path", string.Empty));
+                    break;
+
+                case "yt:saveSettings":
+                    SaveYoutubeSettingsFromUi(msg);
+                    break;
+
+                case "yt:updateEngine":
+                    Task ignoredYtUpd = RunYoutubeEngineUpdateAsync();
+                    break;
+
+                case "yt:fetchInfo":
+                    Task ignoredYtInfo = RunYoutubeFetchInfoAsync(GetString(msg, "url", string.Empty));
+                    break;
+
+                case "yt:download":
+                    Task ignoredYtDl = RunYoutubeDownloadAsync(msg);
+                    break;
+
+                case "yt:cancel":
+                    CancelYoutubeOperations();
                     break;
             }
         }
@@ -1428,6 +1472,366 @@ namespace AetherPlayer
             }
         }
 
+        private void PushYoutubeState()
+        {
+            YoutubeSettings s = YoutubeDownloader.LoadSettings();
+            YoutubeEngineStatus st = YoutubeDownloader.GetEngineStatus();
+            PostToUi(new Dictionary<string, object>
+            {
+                { "type", "yt:state" },
+                { "saveDir", s.SaveDir },
+                { "autoPlay", s.AutoPlay },
+                { "busy", _ytDownloading },
+                { "hasYtdlp", st.HasYtdlp },
+                { "hasQuickJs", st.HasQuickJs },
+                { "hasFfmpeg", st.HasFfmpeg },
+                { "ffmpegSource", st.FfmpegSource }
+            });
+        }
+
+        private void SaveYoutubeSettingsFromUi(Dictionary<string, object> msg)
+        {
+            YoutubeSettings s = YoutubeDownloader.LoadSettings();
+            string saveDir = GetString(msg, "saveDir", string.Empty);
+            if (!string.IsNullOrWhiteSpace(saveDir)) s.SaveDir = saveDir.Trim();
+            s.AutoPlay = GetBool(msg, "autoPlay", s.AutoPlay);
+            YoutubeDownloader.SaveSettings(s);
+            PushYoutubeState();
+        }
+
+        private void HandleYoutubeReadClipboard(string reason)
+        {
+            string raw = string.Empty;
+            try
+            {
+                if (Clipboard.ContainsText())
+                {
+                    raw = Clipboard.GetText() ?? string.Empty;
+                }
+            }
+            catch { }
+
+            string normalized = YoutubeDownloader.NormalizeYoutubeUrl(raw);
+            PostToUi(new Dictionary<string, object>
+            {
+                { "type", "yt:clipboard" },
+                { "reason", reason ?? "paste" },
+                { "url", normalized ?? string.Empty },
+                { "valid", !string.IsNullOrEmpty(normalized) }
+            });
+        }
+
+        private void ChooseYoutubeSaveFolder()
+        {
+            YoutubeSettings s = YoutubeDownloader.LoadSettings();
+            using (FolderBrowserDialog dlg = new FolderBrowserDialog())
+            {
+                dlg.Description = "유튜브 다운로드 저장 폴더를 선택하세요";
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(s.SaveDir))
+                    {
+                        Directory.CreateDirectory(s.SaveDir);
+                        dlg.SelectedPath = s.SaveDir;
+                    }
+                }
+                catch { }
+
+                if (dlg.ShowDialog(this) == DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+                {
+                    s.SaveDir = dlg.SelectedPath;
+                    YoutubeDownloader.SaveSettings(s);
+                    PushYoutubeState();
+                    PostToast("저장 폴더 변경됨: " + dlg.SelectedPath, "accent");
+                }
+            }
+        }
+
+        private void OpenYoutubeSaveFolder(string customDir)
+        {
+            string dir = string.IsNullOrWhiteSpace(customDir) ? YoutubeDownloader.LoadSettings().SaveDir : customDir.Trim();
+            try
+            {
+                Directory.CreateDirectory(dir);
+                Process.Start("explorer.exe", "\"" + dir + "\"");
+            }
+            catch (Exception ex)
+            {
+                PostToast("폴더 열기 실패: " + ex.Message, "warn");
+            }
+        }
+
+        private void RevealFileInExplorer(string filePath)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath))
+                {
+                    Process.Start("explorer.exe", "/select,\"" + Path.GetFullPath(filePath) + "\"");
+                    return;
+                }
+                OpenYoutubeSaveFolder(string.Empty);
+            }
+            catch (Exception ex)
+            {
+                PostToast("파일 위치 열기 실패: " + ex.Message, "warn");
+            }
+        }
+
+        private void CancelYoutubeOperations()
+        {
+            try { if (_ytFetchCts != null) _ytFetchCts.Cancel(); } catch { }
+            try { if (_ytDownloadCts != null) _ytDownloadCts.Cancel(); } catch { }
+        }
+
+        private void PostYoutubeEngineProgress(string stage, int percent, string message)
+        {
+            if (IsDisposed || !IsHandleCreated) return;
+            BeginInvoke(new Action(delegate
+            {
+                if (IsDisposed) return;
+                PostToUi(new Dictionary<string, object>
+                {
+                    { "type", "yt:engineProgress" },
+                    { "stage", stage ?? string.Empty },
+                    { "percent", percent },
+                    { "message", message ?? string.Empty }
+                });
+            }));
+        }
+
+        private async Task RunYoutubeEngineUpdateAsync()
+        {
+            if (_ytDownloading)
+            {
+                PostToast("다운로드 완료 후 엔진 업데이트를 진행해 주세요", "warn");
+                return;
+            }
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            try
+            {
+                await YoutubeDownloader.UpdateEngineAsync(PostYoutubeEngineProgress, cts.Token).ConfigureAwait(false);
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        PushYoutubeState();
+                        PostToast("유튜브 다운로드 엔진(yt-dlp) 최신 버전 업데이트 완료!", "accent");
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        PostToast("엔진 업데이트 실패: " + ex.Message, "warn");
+                    }));
+                }
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        private async Task RunYoutubeFetchInfoAsync(string rawUrl)
+        {
+            try { if (_ytFetchCts != null) _ytFetchCts.Cancel(); } catch { }
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            _ytFetchCts = cts;
+            CancellationToken ct = cts.Token;
+
+            try
+            {
+                YoutubeVideoInfo info = await YoutubeDownloader.FetchVideoInfoAsync(rawUrl, PostYoutubeEngineProgress, ct).ConfigureAwait(false);
+                if (ct.IsCancellationRequested) return;
+
+                List<Dictionary<string, object>> resList = new List<Dictionary<string, object>>();
+                if (info.Resolutions != null)
+                {
+                    for (int i = 0; i < info.Resolutions.Count; i++)
+                    {
+                        YoutubeResolutionOption opt = info.Resolutions[i];
+                        resList.Add(new Dictionary<string, object>
+                        {
+                            { "height", opt.Height },
+                            { "width", opt.Width },
+                            { "shortSide", opt.ShortSide },
+                            { "fps", opt.Fps },
+                            { "isPortrait", opt.IsPortrait },
+                            { "estimatedBytes", opt.EstimatedBytes },
+                            { "codec", opt.Codec ?? string.Empty },
+                            { "badge", opt.Badge ?? string.Empty },
+                            { "label", opt.Label ?? string.Empty }
+                        });
+                    }
+                }
+
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        if (ct.IsCancellationRequested || IsDisposed) return;
+                        PushYoutubeState();
+                        PostToUi(new Dictionary<string, object>
+                        {
+                            { "type", "yt:infoResult" },
+                            { "success", true },
+                            { "id", info.Id ?? string.Empty },
+                            { "title", info.Title ?? string.Empty },
+                            { "channel", info.Channel ?? string.Empty },
+                            { "duration", info.Duration },
+                            { "thumbnail", info.Thumbnail ?? string.Empty },
+                            { "webpageUrl", info.WebpageUrl ?? rawUrl },
+                            { "resolutions", resList }
+                        });
+                    }));
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (!ct.IsCancellationRequested && !IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        PostToUi(new Dictionary<string, object>
+                        {
+                            { "type", "yt:infoResult" },
+                            { "success", false },
+                            { "error", ex.Message }
+                        });
+                    }));
+                }
+            }
+            finally
+            {
+                if (object.ReferenceEquals(_ytFetchCts, cts)) _ytFetchCts = null;
+                cts.Dispose();
+            }
+        }
+
+        private async Task RunYoutubeDownloadAsync(Dictionary<string, object> msg)
+        {
+            if (_ytDownloading)
+            {
+                PostToast("이미 유튜브 다운로드가 진행 중입니다", "warn");
+                return;
+            }
+
+            YoutubeSettings settings = YoutubeDownloader.LoadSettings();
+            YoutubeDownloadRequest req = new YoutubeDownloadRequest();
+            req.Url = GetString(msg, "url", string.Empty);
+            req.Format = GetString(msg, "format", "mp4");
+            req.MaxHeight = GetInt(msg, "maxHeight", 0);
+            req.ShortSide = GetInt(msg, "shortSide", 0);
+            req.AudioBitrate = GetInt(msg, "audioBitrate", 320);
+            req.SaveDir = string.IsNullOrWhiteSpace(GetString(msg, "saveDir", string.Empty))
+                ? settings.SaveDir
+                : GetString(msg, "saveDir", string.Empty);
+            req.AutoPlay = GetBool(msg, "autoPlay", settings.AutoPlay);
+            req.Title = GetString(msg, "title", string.Empty);
+            req.Thumbnail = GetString(msg, "thumbnail", string.Empty);
+            req.QualityLabel = GetString(msg, "qualityLabel", string.Empty);
+
+            settings.AutoPlay = req.AutoPlay;
+            if (!string.IsNullOrWhiteSpace(req.SaveDir)) settings.SaveDir = req.SaveDir;
+            YoutubeDownloader.SaveSettings(settings);
+
+            _ytDownloading = true;
+            CancellationTokenSource cts = new CancellationTokenSource();
+            _ytDownloadCts = cts;
+            PushYoutubeState();
+
+            try
+            {
+                YoutubeDownloadResult res = await YoutubeDownloader.DownloadAsync(
+                    req,
+                    delegate(Dictionary<string, object> prog)
+                    {
+                        if (cts.IsCancellationRequested || IsDisposed || !IsHandleCreated) return;
+                        BeginInvoke(new Action(delegate
+                        {
+                            if (IsDisposed) return;
+                            Dictionary<string, object> payload = new Dictionary<string, object>(prog);
+                            payload["type"] = "yt:progress";
+                            PostToUi(payload);
+                        }));
+                    },
+                    cts.Token
+                ).ConfigureAwait(false);
+
+                _ytDownloading = false;
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        if (IsDisposed) return;
+                        PushYoutubeState();
+                        PostToUi(new Dictionary<string, object>
+                        {
+                            { "type", "yt:done" },
+                            { "filePath", res.FilePath },
+                            { "fileName", res.FileName },
+                            { "format", res.Format },
+                            { "fileSize", res.FileSize },
+                            { "title", string.IsNullOrWhiteSpace(req.Title) ? Path.GetFileNameWithoutExtension(res.FileName) : req.Title },
+                            { "thumbnail", req.Thumbnail ?? string.Empty },
+                            { "qualityLabel", req.QualityLabel ?? string.Empty },
+                            { "autoPlay", res.AutoPlay }
+                        });
+                        PostToast("다운로드 완료: " + res.FileName, "accent");
+                        if (res.AutoPlay && File.Exists(res.FilePath))
+                        {
+                            RestoreIfMinimized();
+                            SendRegisteredFilesToUi(new List<string> { res.FilePath });
+                        }
+                    }));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                _ytDownloading = false;
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        if (IsDisposed) return;
+                        PushYoutubeState();
+                        PostToUi(new Dictionary<string, object> { { "type", "yt:cancelled" } });
+                        PostToast("유튜브 다운로드가 취소되었습니다", string.Empty);
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                _ytDownloading = false;
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    BeginInvoke(new Action(delegate
+                    {
+                        if (IsDisposed) return;
+                        PushYoutubeState();
+                        PostToUi(new Dictionary<string, object>
+                        {
+                            { "type", "yt:error" },
+                            { "error", ex.Message }
+                        });
+                        PostToast("유튜브 다운로드 실패: " + ex.Message, "warn");
+                    }));
+                }
+            }
+            finally
+            {
+                if (object.ReferenceEquals(_ytDownloadCts, cts)) _ytDownloadCts = null;
+                cts.Dispose();
+            }
+        }
+
         private void SendRegisteredFilesToUi(IEnumerable<string> rawPaths)
         {
             List<string> mediaPaths = new List<string>();
@@ -1846,6 +2250,7 @@ namespace AetherPlayer
             SetGhostMode(false);
             UnregisterGlobalHotkeys();
             _pipeCts.Cancel();
+            CancelYoutubeOperations();
             if (_trayIcon != null)
             {
                 _trayIcon.Visible = false;
