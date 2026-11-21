@@ -9,7 +9,7 @@ namespace AetherPlayer
         // - UpdateGithubRepo: "owner/repo" (e.g. "myname/aether-player")
         // - UpdateFeedUrl: "https://example.com/aether/latest.json"
         public const string UpdateSourceType = "github";
-        public const string UpdateGithubRepo = "";
+        public const string UpdateGithubRepo = "developer-parkhamin/aether-player";
         public const string UpdateFeedUrl = "";
         public const bool AutoCheckOnStartup = true;
     }
